@@ -68,14 +68,17 @@
   const navLinks = $$('.nav a[href^="#"]');
   if ('IntersectionObserver' in window && navLinks.length) {
     const byId = new Map(navLinks.map((a) => [a.getAttribute('href').slice(1), a]));
+    const visible = new Set();
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        const link = byId.get(entry.target.id);
-        if (!link) return;
-        if (entry.isIntersecting) {
-          navLinks.forEach((a) => a.removeAttribute('aria-current'));
-          link.setAttribute('aria-current', 'true');
-        }
+        if (entry.isIntersecting) visible.add(entry.target.id);
+        else visible.delete(entry.target.id);
+      });
+      // Highlight the first section (in page order) crossing the middle of the screen, or none.
+      const current = Array.from(byId.keys()).find((id) => visible.has(id));
+      navLinks.forEach((a) => {
+        if (a === byId.get(current)) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
     byId.forEach((_, id) => { const s = document.getElementById(id); if (s) io.observe(s); });
