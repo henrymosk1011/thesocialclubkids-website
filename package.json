@@ -1,0 +1,14 @@
+{
+  "name": "thesocialclubkids-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Social Club website. Static site on Cloudflare Workers with a Resend powered contact form.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.2"
+  }
+}

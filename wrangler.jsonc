@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "thesocialclubkids",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    // Only the contact API runs Worker code; every page and file is served straight from the edge.
+    "run_worker_first": ["/api/*"]
+  },
+  // Five contact form submissions per minute per IP address.
+  "ratelimits": [
+    {
+      "name": "CONTACT_LIMITER",
+      "namespace_id": "4411",
+      "simple": { "limit": 5, "period": 60 }
+    }
+  ],
+  // Non secret settings. Secrets (RESEND_API_KEY, TURNSTILE_SECRET_KEY) are set in the
+  // Cloudflare dashboard or with `npx wrangler secret put NAME`, never committed here.
+  "vars": {
+    "CONTACT_TO": "contact@thesocialclubkids.com",
+    "CONTACT_FROM": "The Social Club Website <website@forms.thesocialclubkids.com>",
+    "TURNSTILE_SITE_KEY": "",
+    "ALLOWED_ORIGINS": "https://www.thesocialclubkids.com,https://thesocialclubkids.com"
+  }
+}
