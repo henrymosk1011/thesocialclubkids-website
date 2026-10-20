@@ -10,7 +10,7 @@ Designed by [TENELEVENMEDIA](https://www.tenelevenmedia.com).
 | --- | --- |
 | Pages | Hand written static HTML, CSS and JavaScript in `public/` (no build step) |
 | Motion | GSAP 3.15 + ScrollTrigger and Lenis 1.3 (vendored in `public/assets/js/vendor/`) |
-| Fonts | Bricolage Grotesque and Inter, self hosted (no Google Fonts requests) |
+| Fonts | Montserrat (variable, Latin subset), self hosted (no Google Fonts requests) |
 | Hosting | Cloudflare Workers with Static Assets, deployed from GitHub by Workers Builds |
 | Contact form | `src/worker.js` handles `POST /api/contact` and sends mail through Resend |
 
@@ -102,4 +102,4 @@ Unique titles and descriptions, canonical URLs, Open Graph and Twitter cards wit
 
 * GSAP and ScrollTrigger: GreenSock standard license (free, including commercial use).
 * Lenis: MIT license, darkroom.engineering.
-* Bricolage Grotesque and Inter: SIL Open Font License 1.1.
+* Montserrat: SIL Open Font License 1.1.

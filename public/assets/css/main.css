@@ -2,16 +2,9 @@
    Design tokens, base, components. Light editorial palette with ink and lime accents. */
 
 @font-face {
-  font-family: "Bricolage Grotesque";
-  src: url("/assets/fonts/bricolage.woff2") format("woff2");
-  font-weight: 400 800;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Inter";
-  src: url("/assets/fonts/inter.woff2") format("woff2");
-  font-weight: 400 700;
+  font-family: "Montserrat";
+  src: url("/assets/fonts/montserrat.woff2") format("woff2");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -31,8 +24,8 @@
   --error: #b42318;
   --error-on-dark: #ffb4a8;
 
-  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Montserrat", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --gutter: clamp(1rem, 4vw, 3.5rem);
   --maxw: 1520px;
@@ -376,6 +369,7 @@ h1, h2, h3 {
 }
 .hero__line--indent { padding-left: .62em; }
 @media (max-width: 699px) { .hero__display { font-size: 22vw; } }
+@media (min-width: 1000px) { .hero__display { font-size: clamp(3.6rem, 1rem + 11.5vw, 12.75rem); } }
 .hero__word { display: inline-block; }
 
 .hero__card {
