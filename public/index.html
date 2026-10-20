@@ -34,7 +34,7 @@
   <link rel="preload" href="/assets/fonts/bricolage.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" type="image/avif" imagesrcset="/assets/img/tunnel_440.avif 440w, /assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" imagesizes="(min-width: 1000px) 46vw, (min-width: 700px) 56vw, 100vw" fetchpriority="high">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261020b">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261020c">
     <!-- Flags JS and motion support before first paint. CSP allows it by hash (see _headers). -->
   <script>(function(){var r=document.documentElement;r.classList.add('js');if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){r.classList.add('motion');setTimeout(function(){if(!window.__tscMotionReady)r.classList.remove('motion')},4000)}})();</script>
   <script defer src="/assets/js/vendor/gsap.min.js?v=3.15.0"></script>
@@ -70,7 +70,6 @@
           { "@type": "City", "name": "La Cañada Flintridge" },
           { "@type": "AdministrativeArea", "name": "Los Angeles County" }
         ],
-        "founder": { "@id": "https://www.thesocialclubkids.com/#tamar" },
         "parentOrganization": {
           "@type": "Organization",
           "name": "The HummingBird Nest",
@@ -82,14 +81,6 @@
           "https://www.facebook.com/profile.php?id=100086996256269",
           "https://www.linkedin.com/company/90454753/"
         ]
-      },
-      {
-        "@type": "Person",
-        "@id": "https://www.thesocialclubkids.com/#tamar",
-        "name": "Tamar Matossian",
-        "jobTitle": "Founder and Director",
-        "description": "Neurodevelopmental Specialist specializing in the DIR Floortime® approach, with more than 20 years of experience working with the neurodiverse population.",
-        "worksFor": { "@id": "https://www.thesocialclubkids.com/#business" }
       },
       {
         "@type": "WebSite",
@@ -131,7 +122,7 @@
           <li><a class="roll" href="#about"><span class="roll__clip"><span class="roll__text">About</span></span></a></li>
           <li><a class="roll" href="#program"><span class="roll__clip"><span class="roll__text">Program</span></span></a></li>
           <li><a class="roll" href="#clubs"><span class="roll__clip"><span class="roll__text">Clubs</span></span></a></li>
-          <li><a class="roll" href="#founder"><span class="roll__clip"><span class="roll__text">Founder</span></span></a></li>
+          <li><a class="roll" href="#team"><span class="roll__clip"><span class="roll__text">Team</span></span></a></li>
           <li><a class="roll" href="#families"><span class="roll__clip"><span class="roll__text">Families</span></span></a></li>
           <li><a class="roll" href="#faq"><span class="roll__clip"><span class="roll__text">FAQ</span></span></a></li>
           <li><a class="roll" href="#contact"><span class="roll__clip"><span class="roll__text">Contact</span></span></a></li>
@@ -154,7 +145,7 @@
             <li><a href="#about" data-menu-link>About</a></li>
             <li><a href="#program" data-menu-link>Program</a></li>
             <li><a href="#clubs" data-menu-link>Clubs</a></li>
-            <li><a href="#founder" data-menu-link>Founder</a></li>
+            <li><a href="#team" data-menu-link>Team</a></li>
             <li><a href="#families" data-menu-link>Families</a></li>
             <li><a href="#faq" data-menu-link>FAQ</a></li>
             <li><a href="#contact" data-menu-link>Contact</a></li>
@@ -185,7 +176,7 @@
           <picture><source type="image/avif" srcset="/assets/img/tunnel_440.avif 440w, /assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" sizes="(min-width: 1000px) 46vw, (min-width: 700px) 56vw, 100vw"><img class="hero__card-img" src="/assets/img/tunnel_800.webp" srcset="/assets/img/tunnel_440.webp 440w, /assets/img/tunnel_800.webp 800w, /assets/img/tunnel_1500.webp 1500w" sizes="(min-width: 1000px) 46vw, (min-width: 700px) 56vw, 100vw" width="1500" height="1000" alt="A smiling child crawling out of a bright play tunnel during an outdoor Social Club session" loading="eager" fetchpriority="high"></picture>
         </figure>
         <div class="hero__aside" data-hero-fade>
-          <p class="hero__lead">Small, guided groups where members practice real social skills, build confidence, and make genuine friends. Led by neurodevelopmental specialist Tamar Matossian.</p>
+          <p class="hero__lead">Small, guided groups where members practice real social skills, build confidence, and make genuine friends. Led by our caring, experienced team.</p>
           <div class="hero__ctas">
             <a class="btn btn--ink" href="https://calendly.com/thesocialclubkids/15min" target="_blank" rel="noopener" data-magnetic><span>Book a 15 minute call</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 16 16 8M9.5 8H16v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
             <a class="btn btn--ghost" href="#clubs" data-magnetic><span>Explore the clubs</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v13M6.5 13 12 18.5 17.5 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
@@ -194,7 +185,7 @@
       </div>
       <div class="hero__media">
         <div class="hero__frame" data-hero-frame>
-          <picture><source type="image/avif" srcset="/assets/img/yard_800.avif 800w, /assets/img/yard_1400.avif 1400w, /assets/img/yard_2000.avif 2000w, /assets/img/yard_2600.avif 2600w" sizes="100vw"><img class="hero__img" src="/assets/img/yard_1400.webp" srcset="/assets/img/yard_800.webp 800w, /assets/img/yard_1400.webp 1400w, /assets/img/yard_2000.webp 2000w, /assets/img/yard_2600.webp 2600w" sizes="100vw" width="2600" height="1733" alt="Tamar playing catch with a group of kids on the lawn outside The Social Club" decoding="async" loading="lazy"></picture>
+          <picture><source type="image/avif" srcset="/assets/img/yard_800.avif 800w, /assets/img/yard_1400.avif 1400w, /assets/img/yard_2000.avif 2000w, /assets/img/yard_2600.avif 2600w" sizes="100vw"><img class="hero__img" src="/assets/img/yard_1400.webp" srcset="/assets/img/yard_800.webp 800w, /assets/img/yard_1400.webp 1400w, /assets/img/yard_2000.webp 2000w, /assets/img/yard_2600.webp 2600w" sizes="100vw" width="2600" height="1733" alt="A group leader playing catch with a group of kids on the lawn outside The Social Club" decoding="async" loading="lazy"></picture>
         </div>
       </div>
     </section>
@@ -223,7 +214,7 @@
 
         <div class="about__grid">
           <figure class="about__media about__media--a" data-reveal>
-            <div class="parallax" data-parallax><picture><source type="image/avif" srcset="/assets/img/drawtable_800.avif 800w, /assets/img/drawtable_1400.avif 1400w, /assets/img/drawtable_1800.avif 1800w" sizes="(min-width: 900px) 80vw, 100vw"><img src="/assets/img/drawtable_1400.webp" srcset="/assets/img/drawtable_800.webp 800w, /assets/img/drawtable_1400.webp 1400w, /assets/img/drawtable_1800.webp 1800w" sizes="(min-width: 900px) 80vw, 100vw" width="1800" height="1200" alt="Tamar guiding a group of kids as they draw together at a table" decoding="async" loading="lazy"></picture></div>
+            <div class="parallax" data-parallax><picture><source type="image/avif" srcset="/assets/img/drawtable_800.avif 800w, /assets/img/drawtable_1400.avif 1400w, /assets/img/drawtable_1800.avif 1800w" sizes="(min-width: 900px) 80vw, 100vw"><img src="/assets/img/drawtable_1400.webp" srcset="/assets/img/drawtable_800.webp 800w, /assets/img/drawtable_1400.webp 1400w, /assets/img/drawtable_1800.webp 1800w" sizes="(min-width: 900px) 80vw, 100vw" width="1800" height="1200" alt="A group leader guiding a group of kids as they draw together at a table" decoding="async" loading="lazy"></picture></div>
           </figure>
           <figure class="about__media about__media--b" data-reveal>
             <div class="parallax" data-parallax><picture><source type="image/avif" srcset="/assets/img/drawing_800.avif 800w, /assets/img/drawing_1400.avif 1400w" sizes="(min-width: 900px) 30vw, 70vw"><img src="/assets/img/drawing_1400.webp" srcset="/assets/img/drawing_800.webp 800w, /assets/img/drawing_1400.webp 1400w" sizes="(min-width: 900px) 30vw, 70vw" width="1400" height="933" alt="Kids drawing and sharing ideas around an outdoor table" decoding="async" loading="lazy"></picture></div>
@@ -375,28 +366,27 @@
       </div>
     </section>
 
-    <!-- Founder -->
-    <section class="founder section" id="founder" aria-labelledby="founder-title">
-      <div class="container founder__grid">
-        <figure class="founder__media" data-reveal>
-          <div class="parallax" data-parallax><picture><source type="image/avif" srcset="/assets/img/tamar_600.avif 600w, /assets/img/tamar_1000.avif 1000w, /assets/img/tamar_1200.avif 1200w" sizes="(min-width: 900px) 42vw, 100vw"><img src="/assets/img/tamar_1000.webp" srcset="/assets/img/tamar_600.webp 600w, /assets/img/tamar_1000.webp 1000w, /assets/img/tamar_1200.webp 1200w" sizes="(min-width: 900px) 42vw, 100vw" width="1200" height="1800" alt="Tamar Matossian, founder of The Social Club, sitting on the front porch" decoding="async" loading="lazy"></picture></div>
+    <!-- Team -->
+    <section class="team section" id="team" aria-labelledby="team-title">
+      <div class="container team__grid">
+        <figure class="team__media" data-reveal>
+          <div class="parallax" data-parallax><picture><source type="image/avif" srcset="/assets/img/swings_600.avif 600w, /assets/img/swings_1000.avif 1000w" sizes="(min-width: 900px) 42vw, 100vw"><img src="/assets/img/swings_1000.webp" srcset="/assets/img/swings_600.webp 600w, /assets/img/swings_1000.webp 1000w" sizes="(min-width: 900px) 42vw, 100vw" width="1000" height="1500" alt="Social Club staff smiling with a group of kids around a tire swing" decoding="async" loading="lazy"></picture></div>
         </figure>
-        <div class="founder__copy">
-          <p class="eyebrow" data-fade>Meet the founder</p>
-          <h2 class="h2" id="founder-title" data-split>Tamar Matossian</h2>
-          <p class="founder__lead" data-fade>Tamar is a Neurodevelopmental Specialist with more than 20 years of experience working with the neurodiverse population.</p>
-          <p data-fade>She specializes in the DIR Floortime® approach and holds a Speech Language Pathology Assistant license, bringing a multidisciplinary lens to every session to support maximum development.</p>
-          <p data-fade>Tamar is the founder and director of The HummingBird Nest and The Social Club, and the author of the book <cite>What's Autism</cite>. She also leads staff trainings for schools and child facilities and provides parent coaching.</p>
-          <ul class="tags" role="list" aria-label="Credentials" data-fade>
-            <li>Neurodevelopmental Specialist</li>
+        <div class="team__copy">
+          <p class="eyebrow" data-fade>Meet the team</p>
+          <h2 class="h2" id="team-title" data-split>A whole team in your corner.</h2>
+          <p class="team__lead" data-fade>Every club is guided by a caring team with years of hands on experience supporting neurodiverse kids, teens and young adults.</p>
+          <p data-fade>We draw on the evidence based PEERS® curriculum and the DIR Floortime® approach, bringing a multidisciplinary lens to every session to support each member's growth.</p>
+          <p data-fade>As a part of The HummingBird Nest, we also offer parent coaching and staff trainings for schools and child facilities, so the support continues well beyond group.</p>
+          <ul class="tags" role="list" aria-label="Our approach" data-fade>
+            <li>PEERS® curriculum</li>
             <li>DIR Floortime®</li>
-            <li>SLP Assistant</li>
-            <li>Author</li>
-            <li>Parent Coach</li>
+            <li>Social emotional learning</li>
+            <li>Small groups</li>
+            <li>Parent coaching</li>
           </ul>
-          <div class="founder__links" data-fade>
+          <div class="team__links" data-fade>
             <a class="text-link" href="https://www.thehummingbirdnest.org/" target="_blank" rel="noopener"><span>Visit The HummingBird Nest</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 16 16 8M9.5 8H16v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
-            <a class="text-link" href="https://www.amazon.com/dp/069285620X" target="_blank" rel="noopener"><span>Read What's Autism</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 16 16 8M9.5 8H16v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only"> (opens in a new tab)</span></a>
           </div>
         </div>
       </div>
@@ -411,9 +401,9 @@
         <ul class="gallery__strip" role="list" data-hscroll>
           <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/blacktop_800.avif 800w, /assets/img/blacktop_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/blacktop_1400.webp" srcset="/assets/img/blacktop_800.webp 800w, /assets/img/blacktop_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Social Club members playing soccer together on an outdoor court" decoding="async" loading="lazy"></picture></li>
           <li class="shot shot--tall"><picture><source type="image/avif" srcset="/assets/img/swings_600.avif 600w, /assets/img/swings_1000.avif 1000w" sizes="(min-width: 900px) 24vw, 55vw"><img src="/assets/img/swings_1000.webp" srcset="/assets/img/swings_600.webp 600w, /assets/img/swings_1000.webp 1000w" sizes="(min-width: 900px) 24vw, 55vw" width="1000" height="1500" alt="A group of kids and staff smiling together by a tire swing" decoding="async" loading="lazy"></picture></li>
-          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/drawtable_800.avif 800w, /assets/img/drawtable_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/drawtable_1400.webp" srcset="/assets/img/drawtable_800.webp 800w, /assets/img/drawtable_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids concentrating on their drawings while Tamar looks on" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/drawtable_800.avif 800w, /assets/img/drawtable_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/drawtable_1400.webp" srcset="/assets/img/drawtable_800.webp 800w, /assets/img/drawtable_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids concentrating on their drawings while a group leader looks on" decoding="async" loading="lazy"></picture></li>
           <li class="shot shot--mid"><picture><source type="image/avif" srcset="/assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" sizes="(min-width: 900px) 34vw, 70vw"><img src="/assets/img/tunnel_1500.webp" srcset="/assets/img/tunnel_800.webp 800w, /assets/img/tunnel_1500.webp 1500w" sizes="(min-width: 900px) 34vw, 70vw" width="1500" height="1000" alt="A smiling child crawling through a colorful play tunnel on the grass" decoding="async" loading="lazy"></picture></li>
-          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/yard_800.avif 800w, /assets/img/yard_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/yard_1400.webp" srcset="/assets/img/yard_800.webp 800w, /assets/img/yard_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids running and playing ball on the lawn with Tamar" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/yard_800.avif 800w, /assets/img/yard_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/yard_1400.webp" srcset="/assets/img/yard_800.webp 800w, /assets/img/yard_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids running and playing ball on the lawn with a group leader" decoding="async" loading="lazy"></picture></li>
           <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/jenga_800.avif 800w, /assets/img/jenga_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/jenga_1400.webp" srcset="/assets/img/jenga_800.webp 800w, /assets/img/jenga_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="A child carefully placing a block on a tall stack while friends cheer" decoding="async" loading="lazy"></picture></li>
         </ul>
       </div>
@@ -436,36 +426,20 @@
       <div class="quotes" id="quotes" data-carousel tabindex="0" role="region" aria-label="Parent testimonials, scroll horizontally to read more">
         <ul class="quotes__track" role="list">
           <li class="quote" data-quote>
-            <blockquote><p>Tamar's Social Club and one on one help has had a profoundly positive effect on my daughter! Her attitude, her confidence, her overall happiness just grows every week. We feel incredibly lucky to have found her.</p></blockquote>
-            <p class="quote__by">Emily W. <span>Parent</span></p>
-          </li>
-          <li class="quote" data-quote>
             <blockquote><p>Our son had a great experience here. Before he started, he had difficulty connecting and interacting with other kids. Through group, he learned and strengthened his social skills, independence, and importantly had fun doing so as well! Now, a couple of years later, he is thriving at school with his peers.</p></blockquote>
             <p class="quote__by">Amelia S. <span>Parent</span></p>
           </li>
           <li class="quote" data-quote>
-            <blockquote><p>I'm so glad to have found Tamar. My son enjoys his weekly sessions and looks forward to it every week. His social skills have improved tremendously while attending the classes. She's super nice and takes her time, never rushing the sessions. Recommended!</p></blockquote>
-            <p class="quote__by">Sev B. <span>Parent</span></p>
-          </li>
-          <li class="quote" data-quote>
-            <blockquote><p>Tamar is great at gently guiding the kids through anything that feels awkward, helping them understand how to engage in a way that's authentic. We're very grateful for the fun, safe, encouraging space Tamar has created.</p></blockquote>
-            <p class="quote__by">April D. <span>Parent</span></p>
-          </li>
-          <li class="quote" data-quote>
-            <blockquote><p>Tamar has been amazing and has changed my son's life for the better. She's taught him the skills he needs to succeed. She is professional and knows exactly what our children need to grow and succeed. My son looked forward to visits and has grown so much.</p></blockquote>
-            <p class="quote__by">Dalia G. <span>Parent</span></p>
+            <blockquote><p>Our son has made such incredible progress. He has made many friends and learned so many new skills!</p></blockquote>
+            <p class="quote__by">Sam N. <span>Parent</span></p>
           </li>
           <li class="quote" data-quote>
             <blockquote><p>So many places claim to support neurodiversity, but most are out of their element. The Hummingbird Nest, on the other hand, really gets ND kids. They're able to offer many options and creative solutions. My kids are already showing so much growth.</p></blockquote>
             <p class="quote__by">D. C. <span>Parent</span></p>
           </li>
           <li class="quote" data-quote>
-            <blockquote><p>I cannot speak highly enough about Tamar. She has been a lifesaver for my son and my family. She is patient and kind and the best thing of all is that my son really trusts her, which can be a big hurdle to overcome. He looks forward to going to see her!</p></blockquote>
-            <p class="quote__by">Julie F. <span>Parent</span></p>
-          </li>
-          <li class="quote" data-quote>
-            <blockquote><p>Our son has made such incredible progress. He has made many friends and learned so many new skills! Tamar and her team run an amazing program and approach each child and each family with respect, empathy and personalized care.</p></blockquote>
-            <p class="quote__by">Sam N. <span>Parent</span></p>
+            <blockquote><p>My son enjoys his weekly sessions and looks forward to it every week. His social skills have improved tremendously while attending the classes.</p></blockquote>
+            <p class="quote__by">Sev B. <span>Parent</span></p>
           </li>
         </ul>
       </div>
@@ -630,7 +604,7 @@
               <li><a href="#about">About</a></li>
               <li><a href="#program">Program</a></li>
               <li><a href="#clubs">Clubs</a></li>
-              <li><a href="#founder">Founder</a></li>
+              <li><a href="#team">Team</a></li>
               <li><a href="#faq">FAQ</a></li>
             </ul>
           </nav>
