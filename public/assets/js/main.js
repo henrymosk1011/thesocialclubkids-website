@@ -464,15 +464,20 @@
     /* Hero intro (first frame). Text stays visible; only words slide up from their masks. */
     const heroWords = $$('[data-hero-word]');
     const heroFade = $$('[data-hero-fade]');
-    const capsule = $('[data-hero-capsule]');
+    const card = $('[data-hero-card]');
     const frame = $('[data-hero-frame]');
     const intro = gsap.timeline({ defaults: { ease: 'expo.out' } });
     intro
       .fromTo(heroWords, { y: 0, yPercent: 105 }, { yPercent: 0, duration: 1.5, stagger: 0.12 }, 0.1)
       .fromTo(heroFade, { y: 24 }, { y: 0, duration: 1.4, stagger: 0.15 }, 0.45);
-    if (capsule) {
-      intro.fromTo(capsule, { scale: 0 }, { scale: 1, duration: 1.4 }, 0.6)
-        .fromTo($('img', capsule), { scale: 1.6 }, { scale: 1, duration: 1.8 }, 0.6);
+    if (card) {
+      // Transform only (scale), so the intro runs on the compositor without repainting the photo.
+      intro.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 1.8 }, 0.1)
+        .fromTo($('img', card), { scale: 1.3 }, { scale: 1, duration: 2.2 }, 0.1);
+      gsap.fromTo($('picture', card), { yPercent: -4, scale: 1.1 }, {
+        yPercent: 6, scale: 1.1, ease: 'none',
+        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
+      });
     }
     if (frame) {
       intro.fromTo(frame, { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 1.6 }, 0.35)
