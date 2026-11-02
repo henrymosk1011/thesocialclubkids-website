@@ -13,6 +13,7 @@ Designed by [TENELEVENMEDIA](https://www.tenelevenmedia.com).
 | Fonts | Montserrat (variable, Latin subset), self hosted (no Google Fonts requests) |
 | Hosting | Cloudflare Workers with Static Assets, deployed from GitHub by Workers Builds |
 | Contact form | `src/worker.js` handles `POST /api/contact` and sends mail through Resend |
+| Instagram feed | `src/worker.js` serves `GET /api/instagram` and proxies the images; token and feed cache live in Workers KV |
 
 Only `/api/*` runs Worker code (`run_worker_first`), so every page and file is served straight from Cloudflare's edge cache.
 
@@ -31,8 +32,9 @@ public/
   assets/js/vendor/        gsap, ScrollTrigger, lenis
   assets/fonts/            woff2
   assets/img/              AVIF + WebP responsive images, logo SVGs
-src/worker.js              Contact API (validation, honeypot, rate limit, Turnstile, Resend)
-wrangler.jsonc             Worker config, vars, rate limiter
+src/worker.js              Contact API (validation, honeypot, rate limit, Turnstile, Resend),
+                           Instagram feed + image proxy, weekly token refresh (cron)
+wrangler.jsonc             Worker config, vars, rate limiter, KV binding, cron
 ```
 
 ## Local development
@@ -68,9 +70,27 @@ The form works as soon as these are in place:
 
 Until the key exists the API answers `503` and the form shows a friendly message with the phone number and email address.
 
+**Fields and HIPAA.** The form collects only name, email, phone (optional) and program of interest. There is deliberately no message box and no child's age field: Resend states it is not HIPAA compliant and will not sign a Business Associate Agreement, and Cloudflare only signs BAAs on Enterprise plans, so this pipeline must not invite health details. The Worker also ignores any extra fields that arrive (for example from an old cached copy of the page) and never emails them. To collect intake details online, use a form from a vendor that signs a BAA (for example the client portal's own intake or contact widget) rather than this form.
+
 Protections built in: same origin check, 32 KB body limit, honeypot field, minimum fill time, 5 submissions per minute per IP (Workers Rate Limiting), strict server side validation, HTML escaping in the email, no auto reply (so the form cannot be abused to send mail to strangers).
 
 **Optional Cloudflare Turnstile**: create a widget (Managed mode) for both hostnames, put the site key in `TURNSTILE_SITE_KEY` in `wrangler.jsonc`, and add `TURNSTILE_SECRET_KEY` as a secret. The form loads Turnstile automatically when a site key is configured, using the *interaction only* appearance.
+
+### Instagram feed
+
+The "Moments from the club" strip shows the latest posts from [@thesocialclubkids](https://www.instagram.com/thesocialclubkids/). Until a token is set, it shows the built in club photos (each links to the Instagram profile), so the section never looks empty.
+
+How it works: the Worker calls the Instagram API with Instagram Login (`graph.instagram.com/me/media`), caches the result in KV for an hour (serving the stale copy while it refreshes, and for up to a day if Instagram is down), and serves each image through `/api/instagram/media/<id>`. Visitors' browsers never contact Instagram, so the Content Security Policy stays `'self'` and the Privacy Policy did not need a new third party. A weekly cron refreshes the token, which otherwise expires after 60 days.
+
+One time setup:
+
+1. In the Instagram app, make @thesocialclubkids a professional account (Settings > Account type and tools > Switch to professional account). Business or Creator both work.
+2. At [developers.facebook.com](https://developers.facebook.com/apps/), create an app and add the **Instagram** product, choosing **API setup with Instagram login**. It only needs the `instagram_business_basic` permission and can stay in development mode, because it only reads its own account.
+3. Under **Generate access tokens**, add the @thesocialclubkids account, sign in as it, and copy the token (it is long lived).
+4. Cloudflare > Workers & Pages > thesocialclubkids > Settings > Variables and Secrets > Add: type *Secret*, name `INSTAGRAM_TOKEN`, paste the token. (Or `npx wrangler secret put INSTAGRAM_TOKEN`.)
+5. Check `https://www.thesocialclubkids.com/api/instagram`: it should return `"ok": true` with posts.
+
+The `INSTAGRAM` KV namespace has no id in `wrangler.jsonc` on purpose: Wrangler and Workers Builds create it on the first deploy. If the token is ever revoked (for example after an Instagram password change), generate a new one and replace the secret; the Worker notices the new secret and uses it instead of the stored copy.
 
 ### Analytics and Search Console
 
@@ -83,7 +103,8 @@ The Privacy Policy already covers analytics cookies, Cloudflare, Resend, Calendl
 
 ## Editing notes
 
-* **Brand rules**: no dashes, hyphens or em dashes anywhere in visible copy (alt text and meta tags included), no dot graphics or bullets, no lines on headings. Phone numbers are written `(626) 765 1724`; ranges are written `5 to 7`.
+* **Copy source**: visible copy matches the client's original site (thesocialclubkids.com on Webflow) word for word, including its hyphenation (`PEERS®-Based`, `5-7 years old`, `year-round`), the phone format `(626) 765-1724`, the address `808 Foothill Blvd. Unit A` and the email display `Contact@TheSocialClubKids.com`. Keep new copy consistent with it. Still avoid em dashes, dot graphics, bullets and lines on headings.
+* The hero photo cards (`.persons`) are a rebuild of the original site's hover cards: 0.5s `ease`, 58% / 21% / 21% widths (`flex-grow: 2.76` vs `1`), the open photo zoomed to 115%. Hover opens a card with a mouse, tap opens it on touch, and below 700px the cards become a swipeable row.
 * After changing `main.css` or `main.js`, bump the `?v=` query on their `<link>` and `<script>` tags so browsers pick up the new file.
 * The tiny inline script in each page `<head>` is allowed by a SHA 256 hash in the CSP (`public/_headers`). If you change it, recompute the hash:
   `printf '%s' '<script body>' | openssl dgst -sha256 -binary | openssl base64`
@@ -96,7 +117,9 @@ Target: WCAG 2.2 AA. Skip link, landmarks, logical headings, visible focus, AA c
 
 ## SEO
 
-Unique titles and descriptions, canonical URLs, Open Graph and Twitter cards with a 1200×630 share image, JSON-LD (`LocalBusiness`, `Person`, `WebSite`, `FAQPage`, `BreadcrumbList`), `robots.txt`, `sitemap.xml`, web app manifest and icons. Lighthouse SEO 100.
+Unique titles and descriptions, canonical URLs, Open Graph and Twitter cards with a 1200×630 share image (`og-image.jpg`, "Play. Connect. Grow."), JSON-LD (`LocalBusiness` with address, audience ages 5 to 18 and an `OfferCatalog` of every program, `WebSite`, `WebPage`, `FAQPage` matching the visible FAQ word for word, `BreadcrumbList` on legal pages), `robots.txt`, `sitemap.xml`, web app manifest and icons. One `h1`, one `h2` per section, descriptive alt text on every image, the hero photo preloaded with `fetchpriority="high"`. Lighthouse SEO, Accessibility and Best Practices 100 on mobile and desktop.
+
+After the domain moves to this site, verify the domain in Google Search Console, submit the sitemap, and request indexing of the home page. Note that the old Webflow site is currently served with `noindex, nofollow`, so search engines have not been indexing it. Also make sure the Google Business Profile uses the same name, address and phone (`(626) 765-1724`) as the site.
 
 ## Credits
 

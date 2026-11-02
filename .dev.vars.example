@@ -1,3 +1,4 @@
 # Copy to .dev.vars for local testing with `npm run dev`. Never commit real keys.
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
 TURNSTILE_SECRET_KEY=
+INSTAGRAM_TOKEN=
