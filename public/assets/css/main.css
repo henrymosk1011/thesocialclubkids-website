@@ -403,7 +403,9 @@ h1, h2, h3 {
   min-width: 0;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background: var(--paper-2);
+  /* Dark fallback behind the white titles, so they stay readable if a photo fails
+     to load (WCAG 1.4.3; also what WAVE measures, since it ignores images). */
+  background: var(--ink);
   color: var(--white);
   transition: flex-grow .5s ease;
   -webkit-tap-highlight-color: transparent;
@@ -700,7 +702,6 @@ h1, h2, h3 {
 }
 .gallery__title { max-width: 14ch; }
 .gallery__handle { text-decoration: none; text-transform: none; letter-spacing: .04em; font-size: 1rem; }
-.gallery__handle:hover { color: var(--ink); text-decoration: underline; }
 .gallery__follow:hover .icon, .gallery__follow:focus-visible .icon { transform: none; }
 .gallery__viewport { overflow-x: auto; scrollbar-width: none; padding-bottom: var(--section-y); }
 .gallery__viewport::-webkit-scrollbar { display: none; }

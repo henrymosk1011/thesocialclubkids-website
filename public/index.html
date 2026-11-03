@@ -36,13 +36,13 @@
 
   <link rel="preload" href="/assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" type="image/avif" imagesrcset="/assets/img/tunnel_440.avif 440w, /assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" imagesizes="(min-width: 1000px) 1100px, (min-width: 700px) 940px, 105vw" fetchpriority="high">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261102a">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261103a">
     <!-- Flags JS and motion support before first paint. CSP allows it by hash (see _headers). -->
   <script>(function(){var r=document.documentElement;r.classList.add('js');if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){r.classList.add('motion');setTimeout(function(){if(!window.__tscMotionReady)r.classList.remove('motion')},4000)}})();</script>
   <script defer src="/assets/js/vendor/gsap.min.js?v=3.15.0"></script>
   <script defer src="/assets/js/vendor/ScrollTrigger.min.js?v=3.15.0"></script>
   <script defer src="/assets/js/vendor/lenis.min.js?v=1.3.26"></script>
-  <script defer src="/assets/js/main.js?v=20261102a"></script>
+  <script defer src="/assets/js/main.js?v=20261103a"></script>
 
   <script type="application/ld+json">
   {
@@ -270,19 +270,19 @@
 
         <ul class="stats" role="list">
           <li class="stat" data-fade>
-            <p class="stat__num" aria-hidden="true"><span data-count="20">20</span>+</p>
+            <div class="stat__num" aria-hidden="true"><span data-count="20">20</span>+</div>
             <p class="stat__label"><span class="sr-only">20 plus </span>Years of hands on experience</p>
           </li>
           <li class="stat" data-fade>
-            <p class="stat__num" aria-hidden="true"><span data-count="50">50</span></p>
+            <div class="stat__num" aria-hidden="true"><span data-count="50">50</span></div>
             <p class="stat__label"><span class="sr-only">50 </span>Minute sessions, once a week</p>
           </li>
           <li class="stat" data-fade>
-            <p class="stat__num" aria-hidden="true"><span data-count="48">48</span>h</p>
+            <div class="stat__num" aria-hidden="true"><span data-count="48">48</span>h</div>
             <p class="stat__label"><span class="sr-only">Within 48 hours, </span>Progress notes sent after every session</p>
           </li>
           <li class="stat" data-fade>
-            <p class="stat__num" aria-hidden="true"><span data-count="4">4</span></p>
+            <div class="stat__num" aria-hidden="true"><span data-count="4">4</span></div>
             <p class="stat__label"><span class="sr-only">4 </span>Clubs for every age and stage</p>
           </li>
         </ul>
@@ -321,7 +321,7 @@
         <div class="clubs__track" data-hpin-track>
           <div class="clubs__intro">
             <h2 class="h2" id="clubs-title">Clubs</h2>
-            <p class="clubs__count" aria-hidden="true"><span data-hpin-index>01</span> / 04</p>
+            <div class="clubs__count" aria-hidden="true"><span data-hpin-index>01</span> / 04</div>
           </div>
           <ul class="clubs__list" role="list">
             <li class="club" data-club>
@@ -420,23 +420,25 @@
     </section>
 
     <!-- Instagram feed. The photos below are the fallback; main.js swaps in the
-         latest posts from /api/instagram when the feed is configured. -->
+         latest posts from /api/instagram when the feed is configured. Fallback photos
+         are not links: the Follow button is the one link to the profile, so keyboard
+         and screen reader users do not tab through six links to the same page. -->
     <section class="gallery" id="instagram" aria-labelledby="gallery-title" data-instagram>
       <div class="container gallery__head">
         <div>
-          <p class="eyebrow" data-fade><a class="gallery__handle" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener">@thesocialclubkids<span class="sr-only"> on Instagram (opens in a new tab)</span></a></p>
+          <p class="eyebrow" data-fade><span class="gallery__handle">@thesocialclubkids</span></p>
           <h2 class="h2 gallery__title" id="gallery-title" data-split>Moments from the club.</h2>
         </div>
         <a class="btn btn--ink gallery__follow" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener" data-fade data-magnetic><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg><span>Like &amp; Follow our Instagram Page</span><span class="sr-only"> (opens in a new tab)</span></a>
       </div>
       <div class="gallery__viewport" data-hscroll-viewport tabindex="0" role="region" aria-label="Instagram photos, scroll horizontally to see more">
         <ul class="gallery__strip" role="list" data-hscroll data-instagram-list>
-          <li class="shot shot--wide"><a class="shot__link" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener"><picture><source type="image/avif" srcset="/assets/img/blacktop_800.avif 800w, /assets/img/blacktop_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/blacktop_1400.webp" srcset="/assets/img/blacktop_800.webp 800w, /assets/img/blacktop_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Social Club members playing soccer together on an outdoor court" decoding="async" loading="lazy"></picture><span class="sr-only"> (opens Instagram in a new tab)</span></a></li>
-          <li class="shot shot--tall"><a class="shot__link" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener"><picture><source type="image/avif" srcset="/assets/img/swings_600.avif 600w, /assets/img/swings_1000.avif 1000w" sizes="(min-width: 900px) 24vw, 55vw"><img src="/assets/img/swings_1000.webp" srcset="/assets/img/swings_600.webp 600w, /assets/img/swings_1000.webp 1000w" sizes="(min-width: 900px) 24vw, 55vw" width="1000" height="1500" alt="A group of kids and staff smiling together by a tire swing" decoding="async" loading="lazy"></picture><span class="sr-only"> (opens Instagram in a new tab)</span></a></li>
-          <li class="shot shot--wide"><a class="shot__link" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener"><picture><source type="image/avif" srcset="/assets/img/drawtable_800.avif 800w, /assets/img/drawtable_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/drawtable_1400.webp" srcset="/assets/img/drawtable_800.webp 800w, /assets/img/drawtable_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids concentrating on their drawings while a group leader looks on" decoding="async" loading="lazy"></picture><span class="sr-only"> (opens Instagram in a new tab)</span></a></li>
-          <li class="shot shot--mid"><a class="shot__link" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener"><picture><source type="image/avif" srcset="/assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" sizes="(min-width: 900px) 34vw, 70vw"><img src="/assets/img/tunnel_1500.webp" srcset="/assets/img/tunnel_800.webp 800w, /assets/img/tunnel_1500.webp 1500w" sizes="(min-width: 900px) 34vw, 70vw" width="1500" height="1000" alt="A smiling child crawling through a colorful play tunnel on the grass" decoding="async" loading="lazy"></picture><span class="sr-only"> (opens Instagram in a new tab)</span></a></li>
-          <li class="shot shot--wide"><a class="shot__link" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener"><picture><source type="image/avif" srcset="/assets/img/yard_800.avif 800w, /assets/img/yard_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/yard_1400.webp" srcset="/assets/img/yard_800.webp 800w, /assets/img/yard_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids running and playing ball on the lawn with a group leader" decoding="async" loading="lazy"></picture><span class="sr-only"> (opens Instagram in a new tab)</span></a></li>
-          <li class="shot shot--wide"><a class="shot__link" href="https://www.instagram.com/thesocialclubkids/" target="_blank" rel="noopener"><picture><source type="image/avif" srcset="/assets/img/jenga_800.avif 800w, /assets/img/jenga_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/jenga_1400.webp" srcset="/assets/img/jenga_800.webp 800w, /assets/img/jenga_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="A child carefully placing a block on a tall stack while friends cheer" decoding="async" loading="lazy"></picture><span class="sr-only"> (opens Instagram in a new tab)</span></a></li>
+          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/blacktop_800.avif 800w, /assets/img/blacktop_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/blacktop_1400.webp" srcset="/assets/img/blacktop_800.webp 800w, /assets/img/blacktop_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Social Club members playing soccer together on an outdoor court" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--tall"><picture><source type="image/avif" srcset="/assets/img/swings_600.avif 600w, /assets/img/swings_1000.avif 1000w" sizes="(min-width: 900px) 24vw, 55vw"><img src="/assets/img/swings_1000.webp" srcset="/assets/img/swings_600.webp 600w, /assets/img/swings_1000.webp 1000w" sizes="(min-width: 900px) 24vw, 55vw" width="1000" height="1500" alt="A group of kids and staff smiling together by a tire swing" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/drawtable_800.avif 800w, /assets/img/drawtable_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/drawtable_1400.webp" srcset="/assets/img/drawtable_800.webp 800w, /assets/img/drawtable_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids concentrating on their drawings while a group leader looks on" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--mid"><picture><source type="image/avif" srcset="/assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" sizes="(min-width: 900px) 34vw, 70vw"><img src="/assets/img/tunnel_1500.webp" srcset="/assets/img/tunnel_800.webp 800w, /assets/img/tunnel_1500.webp 1500w" sizes="(min-width: 900px) 34vw, 70vw" width="1500" height="1000" alt="A smiling child crawling through a colorful play tunnel on the grass" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/yard_800.avif 800w, /assets/img/yard_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/yard_1400.webp" srcset="/assets/img/yard_800.webp 800w, /assets/img/yard_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="Kids running and playing ball on the lawn with a group leader" decoding="async" loading="lazy"></picture></li>
+          <li class="shot shot--wide"><picture><source type="image/avif" srcset="/assets/img/jenga_800.avif 800w, /assets/img/jenga_1400.avif 1400w" sizes="(min-width: 900px) 46vw, 85vw"><img src="/assets/img/jenga_1400.webp" srcset="/assets/img/jenga_800.webp 800w, /assets/img/jenga_1400.webp 1400w" sizes="(min-width: 900px) 46vw, 85vw" width="1400" height="933" alt="A child carefully placing a block on a tall stack while friends cheer" decoding="async" loading="lazy"></picture></li>
         </ul>
       </div>
     </section>
