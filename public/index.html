@@ -36,13 +36,13 @@
 
   <link rel="preload" href="/assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" type="image/avif" imagesrcset="/assets/img/tunnel_440.avif 440w, /assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" imagesizes="(min-width: 1000px) 1100px, (min-width: 700px) 940px, 105vw" fetchpriority="high">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261103c">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261103d">
     <!-- Flags JS and motion support before first paint. CSP allows it by hash (see _headers). -->
   <script>(function(){var r=document.documentElement;r.classList.add('js');if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){r.classList.add('motion');setTimeout(function(){if(!window.__tscMotionReady)r.classList.remove('motion')},4000)}})();</script>
   <script defer src="/assets/js/vendor/gsap.min.js?v=3.15.0"></script>
   <script defer src="/assets/js/vendor/ScrollTrigger.min.js?v=3.15.0"></script>
   <script defer src="/assets/js/vendor/lenis.min.js?v=1.3.26"></script>
-  <script defer src="/assets/js/main.js?v=20261103a"></script>
+  <script defer src="/assets/js/main.js?v=20261103b"></script>
 
   <script type="application/ld+json">
   {
@@ -552,7 +552,12 @@
         </div>
 
         <div class="contact__panel" data-fade>
-          <form class="form" action="/api/contact" method="post" novalidate data-contact-form>
+          <form class="form" action="https://formsubmit.co/contact@thesocialclubkids.com" method="post" novalidate data-contact-form>
+            <!-- FormSubmit settings. main.js sends the form to FormSubmit's AJAX endpoint;
+                 without JavaScript the browser posts it there and FormSubmit redirects to _next. -->
+            <input type="hidden" name="_subject" value="New website inquiry: The Social Club">
+            <input type="hidden" name="_template" value="table">
+            <input type="hidden" name="_next" value="https://www.thesocialclubkids.com/thanks/">
             <h3 class="form__title">Reach out to us!</h3>
             <p class="form__note" id="form-note">All fields are required unless marked optional.</p>
 
@@ -593,10 +598,8 @@
 
             <div class="hp" aria-hidden="true">
               <label for="f-website">Leave this field empty</label>
-              <input id="f-website" name="website" type="text" tabindex="-1" autocomplete="off">
+              <input id="f-website" name="_honey" type="text" tabindex="-1" autocomplete="off">
             </div>
-            <input type="hidden" name="t" value="" data-form-time>
-            <div class="form__turnstile" data-turnstile></div>
 
             <div class="form__actions">
               <button class="btn btn--ink" type="submit" data-submit data-magnetic><span data-submit-label>Submit</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h13M13 6.5 18.5 12 13 17.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>

@@ -12,7 +12,7 @@ Designed by [TENELEVENMEDIA](https://www.tenelevenmedia.com).
 | Motion | GSAP 3.15 + ScrollTrigger and Lenis 1.3 (vendored in `public/assets/js/vendor/`) |
 | Fonts | Montserrat (variable, Latin subset), self hosted (no Google Fonts requests) |
 | Hosting | Cloudflare Workers with Static Assets, deployed from GitHub by Workers Builds |
-| Contact form | `src/worker.js` handles `POST /api/contact` and sends mail through Resend |
+| Contact form | [FormSubmit](https://formsubmit.co) emails submissions to `contact@thesocialclubkids.com` (no server code) |
 | Instagram feed | `src/worker.js` serves `GET /api/instagram` and proxies the images; token and feed cache live in Workers KV |
 
 Only `/api/*` runs Worker code (`run_worker_first`), so every page and file is served straight from Cloudflare's edge cache.
@@ -32,8 +32,8 @@ public/
   assets/js/vendor/        gsap, ScrollTrigger, lenis
   assets/fonts/            woff2
   assets/img/              AVIF + WebP responsive images, logo SVGs
-src/worker.js              Contact API (validation, honeypot, rate limit, Turnstile, Resend),
-                           Instagram feed + image proxy, weekly token refresh (cron)
+src/worker.js              Instagram feed + image proxy, weekly token refresh (cron);
+                           unused Resend contact API (see Contact form)
 wrangler.jsonc             Worker config, vars, rate limiter, KV binding, cron
 ```
 
@@ -41,7 +41,7 @@ wrangler.jsonc             Worker config, vars, rate limiter, KV binding, cron
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars   # add a Resend key only if you want to send real mail locally
+cp .dev.vars.example .dev.vars   # optional: local secrets (Instagram token)
 npm run dev                      # http://localhost:8787
 ```
 
@@ -59,22 +59,19 @@ Pushing to the production branch triggers **Cloudflare Workers Builds** (`npx wr
 4. Make `www` canonical: **Rules > Redirect Rules > Create rule from template > Redirect from root to WWW** (301, keep query string).
 5. **SSL/TLS > Edge Certificates**: turn on Always Use HTTPS. Leave Rocket Loader off (it conflicts with the Content Security Policy).
 
-### Contact form (Resend)
+### Contact form (FormSubmit)
 
-The form works as soon as these are in place:
+The form posts to [FormSubmit](https://formsubmit.co), which emails each submission to the address in the form's `action` (`contact@thesocialclubkids.com`). `main.js` sends it as JSON to FormSubmit's `/ajax/` endpoint and shows the thank you message in place. Without JavaScript the browser posts the form to FormSubmit, which shows a CAPTCHA and then redirects to `/thanks/` (the `_next` field).
 
-1. **Resend > Domains > Add domain**: `forms.thesocialclubkids.com` (region us-east-1). Add the records Resend lists (MX, SPF TXT, DKIM) to Cloudflare DNS as **DNS only**, then click Verify.
-2. **Resend > API Keys > Create**: permission *Sending access*, restricted to that domain.
-3. **Cloudflare > Workers & Pages > thesocialclubkids > Settings > Variables and Secrets > Add**: type *Secret*, name `RESEND_API_KEY`, paste the key. (Or `npx wrangler secret put RESEND_API_KEY`.)
-4. `CONTACT_FROM` and `CONTACT_TO` live in `wrangler.jsonc`. If you verify a different sending domain, update `CONTACT_FROM` to match.
+**Activation (one time).** The first submission doesn't arrive. FormSubmit emails `contact@thesocialclubkids.com` an "Activate Form" link instead; click it and later submissions are delivered. If FormSubmit asks for activation again after the domain moves from workers.dev to thesocialclubkids.com, click the new link the same way.
 
-Until the key exists the API answers `503` and the form shows a friendly message with the phone number and email address.
+**Hide the address (after activation).** FormSubmit then provides a random alias string. Replace the email in the form `action` with it (`https://formsubmit.co/<alias>`) so the address isn't in the page source.
 
-**Fields and HIPAA.** The form collects only name, email, phone (optional) and program of interest. There is deliberately no message box and no child's age field: Resend states it is not HIPAA compliant and will not sign a Business Associate Agreement, and Cloudflare only signs BAAs on Enterprise plans, so this pipeline must not invite health details. The Worker also ignores any extra fields that arrive (for example from an old cached copy of the page) and never emails them. To collect intake details online, use a form from a vendor that signs a BAA (for example the client portal's own intake or contact widget) rather than this form.
+Settings live in hidden fields in the form: `_subject` (email subject), `_template` (`table` layout), `_next` (no JavaScript redirect). The honeypot field is named `_honey`, so FormSubmit silently drops submissions that fill it. The email's Reply-To is the visitor's address. The Content Security Policy in `public/_headers` allows `https://formsubmit.co` in `connect-src` and `form-action`.
 
-Protections built in: same origin check, 32 KB body limit, honeypot field, minimum fill time, 5 submissions per minute per IP (Workers Rate Limiting), strict server side validation, HTML escaping in the email, no auto reply (so the form cannot be abused to send mail to strangers).
+**Fields and HIPAA.** The form collects only name, email, phone (optional) and program of interest. There is deliberately no message box and no child's age field: FormSubmit is a free relay that does not sign a Business Associate Agreement (BAA), and Cloudflare only signs BAAs on Enterprise plans, so this pipeline must not invite health details. To collect intake details online, use a form from a vendor that signs a BAA (for example the client portal's own intake or contact widget) rather than this form.
 
-**Optional Cloudflare Turnstile**: create a widget (Managed mode) for both hostnames, put the site key in `TURNSTILE_SITE_KEY` in `wrangler.jsonc`, and add `TURNSTILE_SECRET_KEY` as a secret. The form loads Turnstile automatically when a site key is configured, using the *interaction only* appearance.
+The Worker's own `/api/contact` endpoint (Resend based, with rate limiting and server side validation) is still in `src/worker.js` but the page no longer uses it. To switch back, point the form `action` at `/api/contact`, restore the previous submit code in `main.js` from git history, and follow the Resend steps in git history for this README.
 
 ### Instagram feed
 
@@ -99,7 +96,7 @@ The `INSTAGRAM` KV namespace has no id in `wrangler.jsonc` on purpose: Wrangler 
   `script-src https://www.googletagmanager.com`, `connect-src https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com`, `img-src https://*.google-analytics.com https://*.googletagmanager.com`.
 * **Cloudflare Web Analytics** (cookieless): add `https://static.cloudflareinsights.com` to `script-src` and `https://cloudflareinsights.com` to `connect-src`.
 
-The Privacy Policy already covers analytics cookies, Cloudflare, Resend, Calendly and Turnstile.
+The Privacy Policy already covers analytics cookies, Cloudflare, FormSubmit and Calendly.
 
 ## Editing notes
 
