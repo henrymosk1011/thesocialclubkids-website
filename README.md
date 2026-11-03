@@ -115,6 +115,13 @@ The Privacy Policy already covers analytics cookies, Cloudflare, Resend, Calendl
 
 Target: WCAG 2.2 AA. Skip link, landmarks, logical headings, visible focus, AA contrast on every color pair, labelled form fields with announced errors and an error summary, keyboard friendly menu (focus trap, Escape), accordion with `aria-expanded`, carousel buttons with labels, external links announced, `prefers-reduced-motion` turns off smooth scrolling and every scroll effect, forced colors support. Verified with axe-core (0 violations) and Lighthouse (Accessibility 100).
 
+WAVE (WebAIM) notes, so its AIM score stays at 10:
+
+* Text over a photo needs a solid `background-color` behind it (the hero cards use `--ink`). WAVE ignores images and measures against that color, and it keeps the text readable if a photo fails to load.
+* Don't put several links to the same URL next to each other. The fallback Instagram photos are plain images; the Follow button is the one link to the profile (live feed posts each link to their own post).
+* Big decorative numbers that are `aria-hidden` are `<div>`s, not `<p>`s, so WAVE doesn't read them as possible headings.
+* Run WAVE at 100% browser zoom (Cmd/Ctrl + 0). Zoomed out, it flags the 13px labels as "Very small text".
+
 ## SEO
 
 Unique titles and descriptions, canonical URLs, Open Graph and Twitter cards with a 1200×630 share image (`og-image.jpg`, "Play. Connect. Grow."), JSON-LD (`LocalBusiness` with address, audience ages 5 to 18 and an `OfferCatalog` of every program, `WebSite`, `WebPage`, `FAQPage` matching the visible FAQ word for word, `BreadcrumbList` on legal pages), `robots.txt`, `sitemap.xml`, web app manifest and icons. One `h1`, one `h2` per section, descriptive alt text on every image, the hero photo preloaded with `fetchpriority="high"`. Lighthouse SEO, Accessibility and Best Practices 100 on mobile and desktop.

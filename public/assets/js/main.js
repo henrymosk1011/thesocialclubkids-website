@@ -253,9 +253,10 @@
   }
 
   /* Instagram feed
-     The section ships with club photos that link to the profile. When the Worker
-     has an Instagram token (see README), /api/instagram returns the latest posts
-     and they replace those photos. Images come through /api/instagram/media/, so
+     The section ships with club photos (not links; the Follow button links to the
+     profile). When the Worker has an Instagram token (see README), /api/instagram
+     returns the latest posts, each linking to its own post, and they replace those
+     photos. Images come through /api/instagram/media/, so
      visitors' browsers never contact Instagram and the CSP stays 'self' only. */
   const igList = $('[data-instagram-list]');
   if (igList) {
