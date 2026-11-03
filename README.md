@@ -119,8 +119,9 @@ WAVE (WebAIM) notes, so its AIM score stays at 10:
 
 * Text over a photo needs a solid `background-color` behind it (the hero cards use `--ink`). WAVE ignores images and measures against that color, and it keeps the text readable if a photo fails to load.
 * Don't put several links to the same URL next to each other. The fallback Instagram photos are plain images; the Follow button is the one link to the profile (live feed posts each link to their own post).
-* Big decorative numbers that are `aria-hidden` are `<div>`s, not `<p>`s, so WAVE doesn't read them as possible headings.
-* Keep text at 14px (`.875rem`) or larger. The WAVE browser extension measures text as rendered, so with the browser zoomed out to 75% it flags anything 13px or smaller as "Very small text".
+* Big decorative numbers that are `aria-hidden` are `<div>`s, not `<p>`s, so WAVE doesn't read them as possible headings. The footer tagline is a `<div>` for the same reason: it's a tagline, not a heading.
+* Keep paragraph and label text at 15px (`.9375rem`) or larger. The WAVE browser extension flagged 13px and 14px `<p>`/`<span>` labels as "Very small text"; 15px passes.
+* Test with the WAVE browser extension. WAVE's online checker (wave.webaim.org/report) does not apply this site's CSS, so it misses CSS based issues such as contrast and text size.
 
 ## SEO
 
