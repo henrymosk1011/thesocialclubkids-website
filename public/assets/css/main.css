@@ -927,8 +927,6 @@ h1, h2, h3 {
 .select select { padding-right: 3rem; cursor: pointer; }
 .select__icon { position: absolute; right: 1rem; top: 50%; translate: 0 -50%; pointer-events: none; }
 .hp { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
-.form__turnstile:empty { display: none; }
-.form__turnstile { margin-bottom: 1.25rem; }
 .form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: .5rem; }
 .form__privacy { margin: 0; font-size: .9375rem; color: var(--muted); }
 .form__privacy a { color: var(--ink); font-weight: 600; }

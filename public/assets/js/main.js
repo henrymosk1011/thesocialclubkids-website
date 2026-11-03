@@ -314,7 +314,11 @@
     }
   }
 
-  /* Contact form */
+  /* Contact form
+     Sent to FormSubmit (formsubmit.co), which emails it to the address in the form's
+     action. With JavaScript the form posts JSON to FormSubmit's /ajax/ endpoint and
+     shows the thank you message in place; without it, the browser posts the form to
+     FormSubmit, which redirects to the _next page. */
   const form = $('[data-contact-form]');
   if (form) {
     const status = $('[data-form-status]', form);
@@ -322,9 +326,7 @@
     const success = $('[data-form-success]');
     const submit = $('[data-submit]', form);
     const submitLabel = $('[data-submit-label]', form);
-    const turnstileSlot = $('[data-turnstile]', form);
-    const timeField = $('[data-form-time]', form);
-    timeField.value = String(Date.now());
+    const endpoint = form.action.replace('https://formsubmit.co/', 'https://formsubmit.co/ajax/');
 
     const labels = { name: 'Name', email: 'Email', phone: 'Phone' };
     const rules = {
@@ -410,16 +412,19 @@
       if (Object.keys(errors).length) { showErrors(errors); return; }
 
       const data = Object.fromEntries(new FormData(form).entries());
+      ['name', 'email', 'phone'].forEach((k) => { data[k] = (data[k] || '').trim(); });
+      delete data._next; // only used by the no JavaScript fallback
       setBusy(true);
       status.textContent = 'Sending.';
       try {
-        const res = await fetch(form.action, {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify(data),
         });
         const body = await res.json().catch(() => ({}));
-        if (res.ok && body.ok) {
+        // FormSubmit answers { success: "true" | "false", message }
+        if (res.ok && String(body.success) === 'true') {
           status.textContent = '';
           form.hidden = true;
           success.hidden = false;
@@ -427,52 +432,14 @@
           if (motionOn) gsap.from(success, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
           return;
         }
-        if (res.status === 422 && body.fields) { status.textContent = ''; showErrors(body.fields); return; }
-        throw new Error(body.error || `Request failed with status ${res.status}`);
+        throw new Error(body.message || `Request failed with status ${res.status}`);
       } catch (err) {
         status.classList.add('is-error');
         status.textContent = 'Oops! Something went wrong while submitting the form. Please email Contact@TheSocialClubKids.com or call (626) 765-1724.';
       } finally {
         setBusy(false);
-        if (window.turnstile && turnstileSlot.dataset.widgetId) window.turnstile.reset(turnstileSlot.dataset.widgetId);
       }
     });
-
-    // Optional Cloudflare Turnstile, enabled when the Worker exposes a site key
-    let turnstileRequested = false;
-    const loadTurnstile = () => {
-      if (turnstileRequested) return;
-      turnstileRequested = true;
-      fetch('/api/config', { headers: { Accept: 'application/json' } })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((cfg) => {
-          if (!cfg || !cfg.turnstileSiteKey) return;
-          window.onTscTurnstileLoad = () => {
-            const id = window.turnstile.render(turnstileSlot, {
-              sitekey: cfg.turnstileSiteKey,
-              appearance: 'interaction-only',
-              theme: 'light',
-              'response-field-name': 'turnstileToken',
-            });
-            turnstileSlot.dataset.widgetId = id;
-          };
-          const s = document.createElement('script');
-          s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTscTurnstileLoad';
-          s.async = true;
-          s.defer = true;
-          document.head.appendChild(s);
-        })
-        .catch(() => {});
-    };
-    if ('IntersectionObserver' in window) {
-      const fio = new IntersectionObserver((entries) => {
-        if (entries.some((en) => en.isIntersecting)) { loadTurnstile(); fio.disconnect(); }
-      }, { rootMargin: '600px 0px' });
-      fio.observe(form);
-    } else {
-      loadTurnstile();
-    }
-    form.addEventListener('focusin', loadTurnstile, { once: true });
   }
 
   /* Text splitting for word reveals. Screen readers get the original text once;
