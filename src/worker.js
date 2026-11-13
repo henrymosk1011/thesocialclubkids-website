@@ -6,9 +6,11 @@
  *
  *   POST /api/contact               Validates the contact form and emails it through Resend.
  *   GET  /api/config                Public, non secret client config (Turnstile site key).
- *   GET  /api/instagram             Latest posts from @thesocialclubkids (cached).
+ *   GET  /api/instagram             Latest posts from @thesocialclubkids (cached), read from
+ *                                   Behold or, failing that, straight from the Instagram API.
  *   GET  /api/instagram/media/:id   Image for one of those posts, proxied so the CSP stays 'self'.
- *   Cron (weekly)                   Refreshes the Instagram token before its 60 day expiry.
+ *   Cron (weekly)                   Keeps the feed warm and, when an Instagram token is used,
+ *                                   refreshes it before its 60 day expiry.
  *
  * The contact form only collects name, email, phone and program of interest. It has
  * no free text field on purpose: Resend and Cloudflare (below Enterprise) will not sign
@@ -21,8 +23,11 @@
  *   TURNSTILE_SITE_KEY    var, optional, enables Cloudflare Turnstile on the form
  *   TURNSTILE_SECRET_KEY  secret, optional, required when TURNSTILE_SITE_KEY is set
  *   ALLOWED_ORIGINS       var, optional comma separated list of extra allowed origins
- *   INSTAGRAM_TOKEN       secret, optional, Instagram API (Instagram Login) long lived token
- *   INSTAGRAM             KV binding, stores the refreshed token and the cached feed
+ *   BEHOLD_FEED_ID        var, optional, id (or URL) of a Behold JSON feed: the simple way to
+ *                         turn on the Instagram feed
+ *   INSTAGRAM_TOKEN       secret, optional, Instagram API (Instagram Login) long lived token,
+ *                         used only when BEHOLD_FEED_ID is empty
+ *   INSTAGRAM             KV binding, stores the cached feed and the refreshed token
  */
 
 const MAX_BODY_BYTES = 32 * 1024;
@@ -84,7 +89,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil((async () => {
       await refreshInstagramToken(env);
-      await loadFeed(env, { force: true });
+      await loadFeed(env, { force: true }).catch((err) => console.error('instagram refresh failed', err && err.message ? err.message : err));
     })());
   },
 };
@@ -336,24 +341,42 @@ function json(status, payload, extra = {}) {
 
 /* Instagram feed
  *
- * Uses the Instagram API with Instagram Login (a professional Instagram account and a
- * long lived token with the instagram_business_basic permission; see README).
+ * The posts come from one of two places:
  *
- * Token: the INSTAGRAM_TOKEN secret seeds it. The weekly cron refreshes it (tokens last
- * 60 days) and stores the new one in KV together with a fingerprint of the secret, so
- * replacing the secret later always wins over an older refreshed token.
+ * 1. Behold (behold.so), when BEHOLD_FEED_ID is set. Behold holds the connection to the
+ *    Instagram account and hands the posts over as JSON, so there is no token to look
+ *    after. This is the setup the README describes.
+ * 2. The Instagram API with Instagram Login, when only the INSTAGRAM_TOKEN secret is set
+ *    (a long lived token with the instagram_business_basic permission). The weekly cron
+ *    refreshes the token (it lasts 60 days) and stores the new one in KV together with a
+ *    fingerprint of the secret, so replacing the secret later always wins over an older
+ *    refreshed token.
  *
- * Feed: cached in KV for an hour. A stale copy is served immediately while a fresh one
- * is fetched in the background, and is kept for a day if Instagram is unreachable.
+ * Feed: cached in KV. A stale copy is served immediately while a fresh one is fetched in
+ * the background, and is kept for a while if the source is unreachable.
  */
 const IG_API = 'https://graph.instagram.com';
 const IG_FIELDS = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
 const IG_LIMIT = 12;
-const IG_FRESH_MS = 60 * 60 * 1000;
-const IG_KEEP_SECONDS = 24 * 60 * 60;
+const BEHOLD_API = 'https://feeds.behold.so';
 const IG_TOKEN_KEY = 'ig:token';
-const IG_FEED_KEY = 'ig:feed:v1';
-const IG_MEDIA_HOSTS = /(^|\.)(cdninstagram\.com|fbcdn\.net)$/i;
+const IG_FEED_KEY = 'ig:feed:v2';
+// After a refresh starts or fails, page views wait this long before asking the source again.
+const IG_RETRY_MS = 30 * 60 * 1000;
+// How long a copy counts as fresh, and how long it is kept when the source cannot be reached.
+// Behold: its free plan picks up new posts once a day and counts every request for the feed
+// as a "view" (1,200 a month, then the account pauses until the next month), so ask every
+// four hours: under 200 requests a month however busy the site is. Its images are its own
+// copies rather than Instagram's expiring links, so the last good copy is kept for a week.
+// Instagram: image links expire, so the copy is refreshed hourly and kept for a day.
+const IG_SOURCES = {
+  behold: { freshMs: 4 * 60 * 60 * 1000, keepSeconds: 7 * 24 * 60 * 60 },
+  instagram: { freshMs: 60 * 60 * 1000, keepSeconds: 24 * 60 * 60 },
+};
+const IG_MEDIA_HOSTS = /(^|\.)(cdninstagram\.com|fbcdn\.net|behold\.pictures)$/i;
+// When this isolate last started a refresh, per source. It backs up the note kept in KV,
+// which requests arriving at the same moment (or within KV's one minute read cache) miss.
+const igLastRefreshStart = {};
 
 async function instagramFeed(env, ctx) {
   let feed = null;
@@ -387,7 +410,8 @@ async function instagramMedia(request, env, ctx, id) {
 
   let feed = null;
   try {
-    feed = await loadFeed(env, { ctx });
+    // The stored copy is enough here: only the feed request itself refreshes it.
+    feed = await loadFeed(env, { ctx, refresh: false });
   } catch (err) {
     console.error('instagram media lookup failed', err && err.message ? err.message : err);
   }
@@ -400,12 +424,18 @@ async function instagramMedia(request, env, ctx, id) {
   } catch {
     return json(404, { ok: false, error: 'Not found.' });
   }
-  // Only ever fetch Instagram's own image CDN.
+  // Only ever fetch Instagram's or Behold's own image CDN.
   if (src.protocol !== 'https:' || !IG_MEDIA_HOSTS.test(src.hostname)) {
     return json(404, { ok: false, error: 'Not found.' });
   }
 
-  const upstream = await fetch(src.toString(), { headers: { Accept: 'image/avif,image/webp,image/jpeg,image/*' } });
+  let upstream;
+  try {
+    upstream = await fetch(src.toString(), { headers: { Accept: 'image/avif,image/webp,image/jpeg,image/*' } });
+  } catch (err) {
+    console.error('instagram media fetch failed', err && err.message ? err.message : err);
+    return json(502, { ok: false, error: 'Image unavailable.' });
+  }
   const type = (upstream.headers.get('Content-Type') || '').toLowerCase();
   if (!upstream.ok || !type.startsWith('image/')) {
     return json(502, { ok: false, error: 'Image unavailable.' });
@@ -428,38 +458,137 @@ async function instagramMedia(request, env, ctx, id) {
   return response;
 }
 
-// Returns { fetchedAt, posts } or null when no token is configured.
-async function loadFeed(env, { ctx = null, force = false } = {}) {
-  const kv = env.INSTAGRAM || null;
-  let cached = null;
-  if (kv) {
-    try {
-      cached = await kv.get(IG_FEED_KEY, 'json');
-    } catch {
-      cached = null;
-    }
-  }
-  const fresh = cached && Date.now() - cached.fetchedAt < IG_FRESH_MS;
-  if (cached && fresh && !force) return cached;
+// Accepts the bare feed id or the whole feed URL (https://feeds.behold.so/<id>).
+function beholdFeedId(env) {
+  const match = String(env.BEHOLD_FEED_ID || '').trim().match(/([A-Za-z0-9_-]{8,64})\/?$/);
+  return match ? match[1] : '';
+}
 
-  if (cached && !force && ctx && ctx.waitUntil) {
-    // Serve the stale copy now and refresh it in the background.
-    ctx.waitUntil(fetchFeed(env).catch((err) => console.error('instagram refresh failed', err && err.message ? err.message : err)));
-    return cached;
+function feedSource(env) {
+  if (beholdFeedId(env)) {
+    // Without the KV cache every page view would count against Behold's monthly allowance.
+    if (env.INSTAGRAM) return 'behold';
+    console.error('instagram feed: BEHOLD_FEED_ID is set but the INSTAGRAM KV binding is missing');
+    return '';
+  }
+  return env.INSTAGRAM_TOKEN ? 'instagram' : '';
+}
+
+// The stored copy for this source, or null. Past its keep time the posts are dropped,
+// but the record still says when the source was last tried.
+async function storedFeed(env, source) {
+  if (!env.INSTAGRAM) return null;
+  let record = null;
+  try {
+    record = await env.INSTAGRAM.get(IG_FEED_KEY, 'json');
+  } catch {
+    record = null;
+  }
+  if (!record || record.source !== source || !Array.isArray(record.posts)) return null;
+  if (Date.now() - (record.fetchedAt || 0) > IG_SOURCES[source].keepSeconds * 1000) {
+    return { ...record, fetchedAt: 0, posts: [] };
+  }
+  return record;
+}
+
+// Returns { source, fetchedAt, posts } or null when no source is configured.
+// refresh: false returns the stored copy however old it is (used for images).
+async function loadFeed(env, { ctx = null, force = false, refresh = true } = {}) {
+  const source = feedSource(env);
+  if (!source) return null;
+  const cached = await storedFeed(env, source);
+
+  if (!force) {
+    const now = Date.now();
+    const lastTry = Math.max(cached ? cached.triedAt || 0 : 0, igLastRefreshStart[source] || 0);
+    const triedLately = now - lastTry < IG_RETRY_MS;
+    if (cached) {
+      const fresh = now - cached.fetchedAt < IG_SOURCES[source].freshMs;
+      if (!refresh || fresh || triedLately) return cached;
+      if (cached.posts.length && ctx && ctx.waitUntil) {
+        // Serve the stale copy now and refresh it in the background.
+        ctx.waitUntil(refreshFeed(env, source, cached).catch((err) => console.error('instagram refresh failed', err && err.message ? err.message : err)));
+        return cached;
+      }
+    } else if (triedLately) {
+      return null;
+    }
   }
 
   try {
-    const feed = await fetchFeed(env);
-    return feed || cached;
+    return await refreshFeed(env, source, cached);
   } catch (err) {
-    if (cached) return cached;
-    throw err;
+    if (!cached) throw err;
+    console.error('instagram refresh failed', err && err.message ? err.message : err);
+    return cached;
   }
 }
 
-async function fetchFeed(env) {
+async function refreshFeed(env, source, cached) {
+  igLastRefreshStart[source] = Date.now();
+  const kv = env.INSTAGRAM || null;
+  const { keepSeconds } = IG_SOURCES[source];
+  const base = cached || { source, fetchedAt: 0, posts: [] };
+  if (kv) {
+    // Note the attempt first, so page views that arrive meanwhile, or after a failure,
+    // wait for IG_RETRY_MS instead of each asking the source again.
+    const until = Math.max(Math.floor(Date.now() / 1000) + 3600, Math.floor(base.fetchedAt / 1000) + keepSeconds);
+    await kv.put(IG_FEED_KEY, JSON.stringify({ ...base, triedAt: Date.now() }), { expiration: until }).catch(() => {});
+  }
+  const posts = source === 'behold' ? await fetchBeholdPosts(env) : await fetchInstagramPosts(env);
+  const feed = { source, fetchedAt: Date.now(), posts };
+  if (kv) {
+    await kv.put(IG_FEED_KEY, JSON.stringify(feed), { expirationTtl: keepSeconds });
+  }
+  return feed;
+}
+
+async function fetchBeholdPosts(env) {
+  const res = await fetch(`${BEHOLD_API}/${beholdFeedId(env)}`, { headers: { Accept: 'application/json' } });
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body || !Array.isArray(body.posts)) {
+    const detail = body && typeof (body.error || body.message) === 'string' ? (body.error || body.message).slice(0, 200) : '';
+    throw new Error(`behold feed request failed: ${res.status} ${detail}`.trim());
+  }
+  return body.posts.map(beholdPost).filter(Boolean).slice(0, IG_LIMIT);
+}
+
+function beholdPost(p) {
+  if (!p || typeof p !== 'object') return null;
+  const id = String(p.id || '');
+  if (!/^\d{1,30}$/.test(id) || typeof p.permalink !== 'string') return null;
+  if (!/^https:\/\/(www\.)?instagram\.com\//.test(p.permalink)) return null;
+  // Behold's resized copy (about 1000px on the long side) rather than Instagram's original.
+  // Videos and reels come with a still image; albums use their first item.
+  const first = Array.isArray(p.children) ? p.children[0] : null;
+  const src = sizedImage(p.sizes) || sizedImage(first && first.sizes)
+    || (p.mediaType === 'VIDEO' ? p.thumbnailUrl : p.mediaUrl);
+  if (typeof src !== 'string' || !src) return null;
+  return {
+    id,
+    permalink: p.permalink,
+    src,
+    type: typeof p.mediaType === 'string' ? p.mediaType : 'IMAGE',
+    timestamp: typeof p.timestamp === 'string' ? p.timestamp : null,
+    alt: ownAltText(p.altText) || altFromCaption(p.prunedCaption || p.caption, p.mediaType),
+  };
+}
+
+function sizedImage(sizes) {
+  if (!sizes || typeof sizes !== 'object') return '';
+  const size = [sizes.large, sizes.medium, sizes.full, sizes.small].find((s) => s && typeof s.mediaUrl === 'string' && s.mediaUrl);
+  return size ? size.mediaUrl : '';
+}
+
+// The alt text written on Instagram itself, tidied to one line.
+function ownAltText(value) {
+  if (typeof value !== 'string') return '';
+  const text = value.replace(/\s+/g, ' ').trim();
+  return text.length > 200 ? `${text.slice(0, 197).replace(/\s+\S*$/, '')}...` : text;
+}
+
+async function fetchInstagramPosts(env) {
   const token = await instagramToken(env);
-  if (!token) return null;
   const url = `${IG_API}/me/media?fields=${IG_FIELDS}&limit=${IG_LIMIT}&access_token=${encodeURIComponent(token)}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   const body = await res.json().catch(() => ({}));
@@ -467,7 +596,7 @@ async function fetchFeed(env) {
     const detail = body && body.error ? `${body.error.code || ''} ${body.error.message || ''}` : res.status;
     throw new Error(`instagram media request failed: ${detail}`);
   }
-  const posts = body.data
+  return body.data
     .map((m) => {
       const src = m.media_type === 'VIDEO' ? m.thumbnail_url : m.media_url;
       if (!m.id || !/^\d{1,30}$/.test(String(m.id)) || !src || typeof m.permalink !== 'string') return null;
@@ -482,11 +611,6 @@ async function fetchFeed(env) {
       };
     })
     .filter(Boolean);
-  const feed = { fetchedAt: Date.now(), posts };
-  if (env.INSTAGRAM) {
-    await env.INSTAGRAM.put(IG_FEED_KEY, JSON.stringify(feed), { expirationTtl: IG_KEEP_SECONDS });
-  }
-  return feed;
 }
 
 // A short, readable description from the caption: first sentence, no hashtags or mentions.

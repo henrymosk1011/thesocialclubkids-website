@@ -2,3 +2,5 @@
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
 TURNSTILE_SECRET_KEY=
 INSTAGRAM_TOKEN=
+# To try the Instagram feed locally, set a Behold feed id here (it overrides wrangler.jsonc).
+# BEHOLD_FEED_ID=
