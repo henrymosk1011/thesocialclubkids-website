@@ -51,6 +51,8 @@ npm run dev                      # http://localhost:8787
 
 Pushing to the production branch triggers **Cloudflare Workers Builds** (`npx wrangler deploy`). The Worker is named `thesocialclubkids`.
 
+Automatic builds need the **Cloudflare Workers and Pages** GitHub App installed with access to this repository (GitHub > Settings > Applications). Without it, pushes reach GitHub but Cloudflare never hears about them. Each push to `main` should show a Workers Builds check on the commit; if none appears, start a build from **Workers & Pages > thesocialclubkids > Deployments** and check the app's repository access.
+
 ### Domain: GoDaddy to Cloudflare
 
 1. In Cloudflare, the zone `thesocialclubkids.com` is added. Open **DNS > Records** and confirm the existing records were imported, especially the **MX and TXT records for email** (`contact@thesocialclubkids.com`). Mail records must stay **DNS only** (grey cloud).
