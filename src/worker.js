@@ -4,17 +4,23 @@
  * Static files in /public are served directly by Workers Static Assets.
  * This script only runs for /api/* (see run_worker_first in wrangler.jsonc):
  *
- *   POST /api/contact   Validates the contact form and emails it through Resend.
- *   GET  /api/config    Public, non secret client config (Turnstile site key).
+ *   POST /api/contact     Validates the contact form and emails it through Resend.
+ *   GET  /api/config      Public, non secret client config (Turnstile site key).
+ *   GET  /api/instagram   Recent Instagram posts and their images (see instagram.js).
+ *
+ * A Cron Trigger also runs every hour to refresh the Instagram feed and its access token.
  *
  * Configuration (Cloudflare dashboard > Worker > Settings > Variables and Secrets):
- *   RESEND_API_KEY        secret, required to send mail
- *   CONTACT_TO            var, inbox that receives submissions
- *   CONTACT_FROM          var, verified Resend sender, e.g. "The Social Club <website@forms.thesocialclubkids.com>"
- *   TURNSTILE_SITE_KEY    var, optional, enables Cloudflare Turnstile on the form
- *   TURNSTILE_SECRET_KEY  secret, optional, required when TURNSTILE_SITE_KEY is set
- *   ALLOWED_ORIGINS       var, optional comma separated list of extra allowed origins
+ *   RESEND_API_KEY          secret, required to send mail
+ *   CONTACT_TO              var, inbox that receives submissions
+ *   CONTACT_FROM            var, verified Resend sender, e.g. "The Social Club <website@forms.thesocialclubkids.com>"
+ *   TURNSTILE_SITE_KEY      var, optional, enables Cloudflare Turnstile on the form
+ *   TURNSTILE_SECRET_KEY    secret, optional, required when TURNSTILE_SITE_KEY is set
+ *   ALLOWED_ORIGINS         var, optional comma separated list of extra allowed origins
+ *   INSTAGRAM_ACCESS_TOKEN  secret, optional, turns on the Instagram section
  */
+
+import { handleInstagram, runInstagramCron } from './instagram.js';
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MIN_FILL_MS = 2500;
@@ -30,7 +36,7 @@ const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"
 const PHONE_RE = /^[0-9+().\s\-xX]{7,40}$/;
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === '/api/contact') {
@@ -48,11 +54,24 @@ export default {
       });
     }
 
+    if (url.pathname === '/api/instagram' || url.pathname.startsWith('/api/instagram/')) {
+      try {
+        return await handleInstagram(request, env, ctx, url);
+      } catch (err) {
+        console.error('instagram handler failed', err && err.stack ? err.stack : err);
+        return json(500, { ok: false, error: 'Unexpected server error.' });
+      }
+    }
+
     if (url.pathname.startsWith('/api/')) {
       return json(404, { ok: false, error: 'Not found.' });
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runInstagramCron(env));
   },
 };
 

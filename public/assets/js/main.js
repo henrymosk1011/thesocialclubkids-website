@@ -1,5 +1,5 @@
 /* The Social Club
-   Interactions (menu, accordion, carousel, contact form) work everywhere.
+   Interactions (menu, accordion, carousel, contact form, Instagram feed) work everywhere.
    Motion (Lenis smooth scroll, GSAP ScrollTrigger) only runs when the visitor
    has not asked for reduced motion. */
 (() => {
@@ -457,7 +457,7 @@
       gsap.ticker.lagSmoothing(0);
     }
 
-    const api = { hTween: null, distanceOf: () => 0, ready: false };
+    const api = { ctx, hTween: null, distanceOf: () => 0, ready: false };
     const gutterPx = () => parseFloat(getComputedStyle($('.container')).paddingLeft) || 16;
     const radiusPx = () => Math.min(40, Math.max(20, window.innerWidth * 0.026));
 
@@ -720,5 +720,122 @@
     const settle = () => { if (motionApi && motionApi.ready) ScrollTrigger.refresh(); };
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
     if (document.readyState !== 'complete') window.addEventListener('load', settle, { once: true });
+  }
+
+  /* Instagram feed
+     The section ships hidden and appears only when the Worker returns posts, so the page
+     looks exactly as before whenever the feed is not set up or Instagram cannot be reached.
+     Images come from this site (/api/instagram/media), never straight from Instagram. */
+  const insta = $('[data-insta]');
+  const instaGrid = insta && $('[data-insta-grid]', insta);
+  if (instaGrid && window.fetch) {
+    const svg = (inner) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${inner}</svg>`;
+    const ARROW = svg('<path d="M8 16 16 8M9.5 8H16v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>');
+    const BADGES = {
+      video: svg('<path d="M8.5 5.5v13L19 12z" fill="currentColor"/>'),
+      album: svg('<rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="currentColor"/><path d="M5 15.5v-8A2.5 2.5 0 0 1 7.5 5h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'),
+    };
+    const usable = (p) => p && typeof p.alt === 'string'
+      && typeof p.href === 'string' && p.href.startsWith('https://www.instagram.com/')
+      && typeof p.src === 'string' && /^\/api\/instagram\/media\/\d+$/.test(p.src);
+
+    const relayout = () => {
+      if (lenis) lenis.resize();
+      if (motionApi && motionApi.ready) ScrollTrigger.refresh();
+    };
+
+    const tile = (post, i) => {
+      const li = document.createElement('li');
+      li.className = 'insta__item';
+      li.style.setProperty('--i', String(i));
+
+      const a = document.createElement('a');
+      a.className = 'insta__link';
+      a.href = post.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+
+      const img = document.createElement('img');
+      img.className = 'insta__img';
+      img.alt = post.alt;
+      img.width = 800;
+      img.height = 1000;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      // A post whose image cannot load is dropped; with none left the section hides again.
+      img.addEventListener('error', () => {
+        li.remove();
+        if (!instaGrid.children.length) insta.hidden = true;
+        relayout();
+      }, { once: true });
+      img.src = post.src;
+      a.appendChild(img);
+
+      if (BADGES[post.type]) {
+        const badge = document.createElement('span');
+        badge.className = 'insta__badge';
+        badge.insertAdjacentHTML('beforeend', BADGES[post.type]);
+        a.appendChild(badge);
+      }
+      const cta = document.createElement('span');
+      cta.className = 'insta__cta';
+      cta.textContent = 'View post';
+      cta.insertAdjacentHTML('beforeend', ARROW);
+      const sr = document.createElement('span');
+      sr.className = 'sr-only';
+      sr.textContent = ' (opens in a new tab)';
+      a.append(cta, sr);
+
+      li.appendChild(a);
+      return li;
+    };
+
+    const show = (posts) => {
+      // Full rows only: eight tiles (six on phones, see the CSS), or four, or whatever exists.
+      const count = posts.length >= 8 ? 8 : posts.length >= 4 ? 4 : posts.length;
+      if (!count) return;
+      instaGrid.replaceChildren(...posts.slice(0, count).map(tile));
+
+      // Revealing the section moves everything after it. If the visitor is already looking
+      // at what comes after (for example a link straight to #contact), keep their view still.
+      const next = insta.nextElementSibling;
+      const before = next ? next.getBoundingClientRect().top : Infinity;
+      root.style.overflowAnchor = 'none';
+      insta.hidden = false;
+      if (lenis) lenis.resize();
+      if (before < window.innerHeight / 2) {
+        const shift = next.getBoundingClientRect().top - before;
+        if (shift > 1) scrollToTarget(window.scrollY + shift, true);
+      }
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => { root.style.overflowAnchor = ''; }));
+
+      if (motionOn && motionApi) {
+        const title = $('[data-insta-title]', insta);
+        if (title) {
+          motionApi.ctx.add(() => {
+            gsap.fromTo(splitWords(title, true), { yPercent: 110 }, {
+              yPercent: 0, duration: 1.2, stagger: 0.06, ease: 'expo.out',
+              scrollTrigger: { trigger: title, start: 'top 88%', once: true },
+            });
+          });
+        }
+        if (motionApi.ready) ScrollTrigger.refresh();
+      }
+
+      // Fade the tiles up when the section scrolls into view (CSS does the animation).
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+          if (entries.some((en) => en.isIntersecting)) { insta.classList.add('is-inview'); io.disconnect(); }
+        }, { rootMargin: '0px 0px -10% 0px' });
+        io.observe(insta);
+      } else {
+        insta.classList.add('is-inview');
+      }
+    };
+
+    fetch('/api/instagram', { headers: { Accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data && Array.isArray(data.posts)) show(data.posts.filter(usable)); })
+      .catch(() => {});
   }
 })();

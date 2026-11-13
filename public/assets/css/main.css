@@ -799,6 +799,69 @@ h1, h2, h3 {
   .faq__intro { position: sticky; top: calc(var(--header-h) + 2rem); }
 }
 
+/* Instagram (revealed by JS once the feed loads) */
+.insta__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.75rem 2rem;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+.insta__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(.75rem, 1.6vw, 1.5rem);
+}
+.insta__link {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--paper);
+}
+.insta__link:focus-visible { border-radius: var(--radius); }
+.insta__img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 1.2s var(--ease-out); }
+.insta__link:hover .insta__img, .insta__link:focus-visible .insta__img { transform: scale(1.1); }
+.insta__badge {
+  position: absolute;
+  top: clamp(.6rem, 1.2vw, 1rem);
+  right: clamp(.6rem, 1.2vw, 1rem);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: .75rem;
+  background: rgb(15 15 14 / .72);
+  color: var(--paper);
+}
+.insta__cta {
+  position: absolute;
+  left: clamp(.6rem, 1.2vw, 1rem);
+  bottom: clamp(.6rem, 1.2vw, 1rem);
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .55rem .95rem;
+  border-radius: 999px;
+  background: var(--lime);
+  color: var(--ink);
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0;
+  transform: translateY(.75rem);
+  transition: opacity .45s var(--ease-out), transform .45s var(--ease-out);
+}
+.insta__link:hover .insta__cta, .insta__link:focus-visible .insta__cta { opacity: 1; transform: none; }
+@media (max-width: 699px) {
+  .insta__item:nth-child(n+7) { display: none; }
+}
+@media (min-width: 700px) {
+  .insta__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 /* Contact */
 .contact { padding-bottom: clamp(4rem, 8vw, 7rem); }
 .contact__grid { display: grid; gap: clamp(3rem, 6vw, 6rem); }
@@ -973,6 +1036,13 @@ h1, h2, h3 {
 .motion [data-hero-frame] { opacity: 0; }
 .motion .hero__frame { margin-inline: 0; border-radius: 0; clip-path: inset(0 var(--gutter) round var(--radius-lg)); }
 .motion [data-reveal] { clip-path: inset(100% 0 0 0 round var(--radius)); }
+.motion .insta [data-insta-fade], .motion .insta__item { opacity: 0; transform: translateY(40px); }
+.motion .insta.is-inview [data-insta-fade], .motion .insta.is-inview .insta__item {
+  opacity: 1;
+  transform: none;
+  transition: opacity 1.2s var(--ease-out), transform 1.2s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -984,12 +1054,12 @@ h1, h2, h3 {
 }
 
 @media (forced-colors: active) {
-  .btn, .menu-toggle, .icon-btn, .acc__icon, .tags li { border: 1px solid CanvasText; }
+  .btn, .menu-toggle, .icon-btn, .acc__icon, .tags li, .insta__cta, .insta__badge { border: 1px solid CanvasText; }
   .btn::before, .topic::before { display: none; }
 }
 
 @media print {
-  .site-header, .band, .gallery, .carousel-controls, .contact__panel { display: none !important; }
+  .site-header, .band, .gallery, .insta, .carousel-controls, .contact__panel { display: none !important; }
   .section--dark, .site-footer { background: #fff; color: #000; }
 }
 

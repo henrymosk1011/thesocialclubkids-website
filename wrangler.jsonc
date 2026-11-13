@@ -11,9 +11,14 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    // Only the contact API runs Worker code; every page and file is served straight from the edge.
+    // Only /api/* runs Worker code; every page and file is served straight from the edge.
     "run_worker_first": ["/api/*"]
   },
+  // Every hour: refresh the Instagram feed and, once a week, renew its access token.
+  "triggers": { "crons": ["17 * * * *"] },
+  // Cached Instagram feed and the renewed access token. No id is needed here: Wrangler
+  // creates the namespace on the first deploy and keeps it linked to this Worker.
+  "kv_namespaces": [{ "binding": "INSTAGRAM_KV" }],
   // Five contact form submissions per minute per IP address.
   "ratelimits": [
     {
@@ -22,7 +27,7 @@
       "simple": { "limit": 5, "period": 60 }
     }
   ],
-  // Non secret settings. Secrets (RESEND_API_KEY, TURNSTILE_SECRET_KEY) are set in the
+  // Non secret settings. Secrets (RESEND_API_KEY, TURNSTILE_SECRET_KEY, INSTAGRAM_ACCESS_TOKEN) are set in the
   // Cloudflare dashboard or with `npx wrangler secret put NAME`, never committed here.
   "vars": {
     "CONTACT_TO": "contact@thesocialclubkids.com",

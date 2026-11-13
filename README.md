@@ -13,6 +13,7 @@ Designed by [TENELEVENMEDIA](https://www.tenelevenmedia.com).
 | Fonts | Bricolage Grotesque and Inter, self hosted (no Google Fonts requests) |
 | Hosting | Cloudflare Workers with Static Assets, deployed from GitHub by Workers Builds |
 | Contact form | `src/worker.js` handles `POST /api/contact` and sends mail through Resend |
+| Instagram feed | `src/instagram.js` serves recent posts at `GET /api/instagram`, cached in Workers KV and refreshed by a Cron Trigger |
 
 Only `/api/*` runs Worker code (`run_worker_first`), so every page and file is served straight from Cloudflare's edge cache.
 
@@ -32,7 +33,8 @@ public/
   assets/fonts/            woff2
   assets/img/              AVIF + WebP responsive images, logo SVGs
 src/worker.js              Contact API (validation, honeypot, rate limit, Turnstile, Resend)
-wrangler.jsonc             Worker config, vars, rate limiter
+src/instagram.js           Instagram feed API, image proxy, token renewal
+wrangler.jsonc             Worker config, vars, rate limiter, cron, KV
 ```
 
 ## Local development
@@ -72,6 +74,30 @@ Protections built in: same origin check, 32 KB body limit, honeypot field, minim
 
 **Optional Cloudflare Turnstile**: create a widget (Managed mode) for both hostnames, put the site key in `TURNSTILE_SITE_KEY` in `wrangler.jsonc`, and add `TURNSTILE_SECRET_KEY` as a secret. The form loads Turnstile automatically when a site key is configured, using the *interaction only* appearance.
 
+### Instagram feed
+
+The home page has a "Follow the fun" section that shows the latest posts from [@thesocialclubkids](https://www.instagram.com/thesocialclubkids/). It stays hidden until a token is in place, so the site can be deployed before any of this is done.
+
+How it works: the Worker reads the account's posts with the official Instagram API, keeps the result in Workers KV, and serves it at `/api/instagram`. Post images are served through `/api/instagram/media/<id>`, so visitors only ever load files from this site. That keeps the Content Security Policy unchanged and means no visitor data reaches Instagram unless someone opens a post. A Cron Trigger refreshes the feed every hour and renews the token every week (Instagram tokens expire after 60 days if they are not renewed).
+
+One time setup:
+
+1. The Instagram account must be a **professional account** (Business or Creator). In the Instagram app: **Settings > Account type and tools > Switch to professional account**. It is free and does not change how the profile looks.
+2. At [developers.facebook.com/apps](https://developers.facebook.com/apps) create an app (type **Business**) and add the **Instagram** product.
+3. In the app dashboard open **Instagram > API setup with Instagram business login**, add the Instagram account, then click **Generate token** next to it and log in to Instagram as @thesocialclubkids. Copy the token. No App Review is needed for an account you own.
+4. **Cloudflare > Workers & Pages > thesocialclubkids > Settings > Variables and Secrets > Add**: type *Secret*, name `INSTAGRAM_ACCESS_TOKEN`, paste the token. (Or `npx wrangler secret put INSTAGRAM_ACCESS_TOKEN`.)
+
+The section appears within a minute. The KV namespace (`INSTAGRAM_KV` in `wrangler.jsonc`) has no id on purpose: Wrangler creates it on the first deploy and keeps it linked to the Worker. If a deploy ever reports that it cannot create it, the build token is missing the *Workers KV Storage: Edit* permission; either add that permission or create a namespace yourself and put its `id` next to the binding.
+
+Good to know:
+
+* Up to eight posts are shown (six on phones). Reels and videos use their cover image. Captions are not displayed; they are only used, cleaned up, as image alt text.
+* A new post shows up within the hour. A post deleted on Instagram leaves the feed within the hour and its image stops being served within a day.
+* If Instagram is unreachable the last good feed is shown for up to two days, then the section hides itself until the feed is back. Errors are logged under **Workers > thesocialclubkids > Observability** (search for `instagram`).
+* If the token ever stops working (the log will say so), generate a new one and save it over the old secret. The renewed copy in KV is replaced automatically.
+* To turn the feed off, delete the `INSTAGRAM_ACCESS_TOKEN` secret.
+* Local testing: put a token in `.dev.vars`, run `npx wrangler dev --test-scheduled`, and open `http://localhost:8787/cdn-cgi/local/scheduled` to run the hourly job by hand.
+
 ### Analytics and Search Console
 
 * **Search Console**: verify with a DNS TXT record in Cloudflare, then submit `https://www.thesocialclubkids.com/sitemap.xml`.
@@ -79,7 +105,7 @@ Protections built in: same origin check, 32 KB body limit, honeypot field, minim
   `script-src https://www.googletagmanager.com`, `connect-src https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com`, `img-src https://*.google-analytics.com https://*.googletagmanager.com`.
 * **Cloudflare Web Analytics** (cookieless): add `https://static.cloudflareinsights.com` to `script-src` and `https://cloudflareinsights.com` to `connect-src`.
 
-The Privacy Policy already covers analytics cookies, Cloudflare, Resend, Calendly and Turnstile.
+The Privacy Policy already covers analytics cookies, Cloudflare, Resend, Calendly and Turnstile. The Instagram section needs no addition: the feed is loaded by the Worker, not by the visitor's browser, and Instagram is already listed under links to other sites.
 
 ## Editing notes
 
