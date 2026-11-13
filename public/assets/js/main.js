@@ -254,7 +254,7 @@
 
   /* Instagram feed
      The section ships with club photos (not links; the Follow button links to the
-     profile). When the Worker has an Instagram token (see README), /api/instagram
+     profile). When the Worker has a feed to read (see README), /api/instagram
      returns the latest posts, each linking to its own post, and they replace those
      photos. Images come through /api/instagram/media/, so
      visitors' browsers never contact Instagram and the CSP stays 'self' only. */
@@ -264,6 +264,19 @@
     const validPost = (post) => post
       && typeof post.href === 'string' && /^https:\/\/(www\.)?instagram\.com\//.test(post.href)
       && typeof post.img === 'string' && /^\/api\/instagram\/media\/\d+$/.test(post.img);
+    // The built in photos, kept so they can come back if post images fail to load.
+    const builtIn = Array.from(igList.children);
+    let restored = false;
+    const dropPost = (li) => {
+      if (restored) return;
+      li.remove();
+      // Too few posts left to fill the strip: show the club photos again.
+      if (igList.querySelectorAll('.shot--post').length < 3) {
+        restored = true;
+        igList.replaceChildren(...builtIn);
+      }
+      if (motionOn) ScrollTrigger.refresh();
+    };
     const render = (posts) => {
       const frag = document.createDocumentFragment();
       posts.forEach((post) => {
@@ -275,6 +288,7 @@
         a.target = '_blank';
         a.rel = 'noopener';
         const img = document.createElement('img');
+        img.addEventListener('error', () => dropPost(li), { once: true });
         img.src = post.img;
         img.alt = typeof post.alt === 'string' && post.alt ? post.alt : 'Instagram post from The Social Club';
         img.width = 1080;

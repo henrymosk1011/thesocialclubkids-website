@@ -13,7 +13,7 @@ Designed by [TENELEVENMEDIA](https://www.tenelevenmedia.com).
 | Fonts | Montserrat (variable, Latin subset), self hosted (no Google Fonts requests) |
 | Hosting | Cloudflare Workers with Static Assets, deployed from GitHub by Workers Builds |
 | Contact form | [FormSubmit](https://formsubmit.co) emails submissions to `contact@thesocialclubkids.com` (no server code) |
-| Instagram feed | `src/worker.js` serves `GET /api/instagram` and proxies the images; token and feed cache live in Workers KV |
+| Instagram feed | `src/worker.js` serves `GET /api/instagram` and proxies the images; the posts come from a [Behold](https://behold.so) JSON feed, cached in Workers KV |
 
 Only `/api/*` runs Worker code (`run_worker_first`), so every page and file is served straight from Cloudflare's edge cache.
 
@@ -32,7 +32,7 @@ public/
   assets/js/vendor/        gsap, ScrollTrigger, lenis
   assets/fonts/            woff2
   assets/img/              AVIF + WebP responsive images, logo SVGs
-src/worker.js              Instagram feed + image proxy, weekly token refresh (cron);
+src/worker.js              Instagram feed (read from Behold) + image proxy, weekly cron;
                            unused Resend contact API (see Contact form)
 wrangler.jsonc             Worker config, vars, rate limiter, KV binding, cron
 ```
@@ -41,7 +41,7 @@ wrangler.jsonc             Worker config, vars, rate limiter, KV binding, cron
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars   # optional: local secrets (Instagram token)
+cp .dev.vars.example .dev.vars   # optional: local settings (Behold feed id)
 npm run dev                      # http://localhost:8787
 ```
 
@@ -77,19 +77,29 @@ The Worker's own `/api/contact` endpoint (Resend based, with rate limiting and s
 
 ### Instagram feed
 
-The "Moments from the club" strip shows the latest posts from [@thesocialclubkids](https://www.instagram.com/thesocialclubkids/). Until a token is set, it shows the built in club photos (each links to the Instagram profile), so the section never looks empty.
+The "Moments from the club" strip shows the latest posts from [@thesocialclubkids](https://www.instagram.com/thesocialclubkids/). Until a feed is connected it shows the built in club photos, so the section never looks empty.
 
-How it works: the Worker calls the Instagram API with Instagram Login (`graph.instagram.com/me/media`), caches the result in KV for an hour (serving the stale copy while it refreshes, and for up to a day if Instagram is down), and serves each image through `/api/instagram/media/<id>`. Visitors' browsers never contact Instagram, so the Content Security Policy stays `'self'` and the Privacy Policy did not need a new third party. A weekly cron refreshes the token, which otherwise expires after 60 days.
+How it works: [Behold](https://behold.so) holds the connection to the Instagram account and publishes the latest posts as JSON. The Worker reads that feed, keeps a copy in KV, and serves each image through `/api/instagram/media/<id>`. Visitors' browsers never contact Instagram or Behold, so the Content Security Policy stays `'self'`. There is no token to create or renew.
 
 One time setup:
 
-1. In the Instagram app, make @thesocialclubkids a professional account (Settings > Account type and tools > Switch to professional account). Business or Creator both work.
-2. At [developers.facebook.com](https://developers.facebook.com/apps/), create an app and add the **Instagram** product, choosing **API setup with Instagram login**. It only needs the `instagram_business_basic` permission and can stay in development mode, because it only reads its own account.
-3. Under **Generate access tokens**, add the @thesocialclubkids account, sign in as it, and copy the token (it is long lived).
-4. Cloudflare > Workers & Pages > thesocialclubkids > Settings > Variables and Secrets > Add: type *Secret*, name `INSTAGRAM_TOKEN`, paste the token. (Or `npx wrangler secret put INSTAGRAM_TOKEN`.)
-5. Check `https://www.thesocialclubkids.com/api/instagram`: it should return `"ok": true` with posts.
+1. In the Instagram app, make @thesocialclubkids a professional account (Settings > Account type and tools > Switch to professional account). Business or Creator both work. Behold cannot connect personal accounts.
+2. Create a free account at [app.behold.so/register](https://app.behold.so/register).
+3. **Sources > Add source > Basic source > Connect**, then sign in to Instagram as @thesocialclubkids and allow every permission. If someone else holds the Instagram login, copy the auth link shown there and send it to them instead; they do not need a Behold account.
+4. **Feeds > Add feed**: user feed, the new source, type **JSON**. Leave *Domain whitelist* empty (the request comes from the Worker, not from a browser, so a whitelist would block it).
+5. Copy the feed URL (`https://feeds.behold.so/<id>`) and put the id in `BEHOLD_FEED_ID` in `wrangler.jsonc`. It is not a secret. Deploy.
+6. Check `/api/instagram` on the site: it should return `"ok": true` with posts.
 
-The `INSTAGRAM` KV namespace has no id in `wrangler.jsonc` on purpose: Wrangler and Workers Builds create it on the first deploy. If the token is ever revoked (for example after an Instagram password change), generate a new one and replace the secret; the Worker notices the new secret and uses it instead of the stored copy.
+Good to know:
+
+* Behold's free plan gives 6 posts, picks up new posts once a day, and allows 1,200 feed requests a month (the account pauses until the next month if that is exceeded). The Worker asks at most every four hours, about 180 requests a month no matter how busy the site is, and image requests are not counted.
+* A new post can take up to a day to appear. If Behold is unreachable the last good copy is shown for up to a week, then the strip goes back to the built in photos until the feed returns. A post whose image fails to load is dropped from the strip.
+* If the Instagram password changes or access is revoked, reconnect the source in Behold. Nothing changes on the site.
+* To turn the feed off, empty `BEHOLD_FEED_ID` and deploy.
+
+Without Behold: the Worker can also read the Instagram API directly. Leave `BEHOLD_FEED_ID` empty, create a Meta app with the **Instagram** product (**API setup with Instagram business login**), generate a long lived token for the account, and save it as the secret `INSTAGRAM_TOKEN` (`npx wrangler secret put INSTAGRAM_TOKEN`). The weekly cron then renews the token, which otherwise expires after 60 days, and a replaced secret always wins over the stored copy. This route shows up to 12 posts and refreshes hourly.
+
+The `INSTAGRAM` KV namespace has no id in `wrangler.jsonc` on purpose: Wrangler and Workers Builds create it on the first deploy.
 
 ### Analytics and Search Console
 

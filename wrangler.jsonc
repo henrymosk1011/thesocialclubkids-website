@@ -14,12 +14,13 @@
     // Only the contact API runs Worker code; every page and file is served straight from the edge.
     "run_worker_first": ["/api/*"]
   },
-  // Stores the refreshed Instagram token and the cached feed. No id on purpose:
-  // Wrangler (and Workers Builds) create the namespace on the first deploy.
+  // Stores the cached Instagram feed (and the refreshed token, if one is used). No id on
+  // purpose: Wrangler (and Workers Builds) create the namespace on the first deploy.
   "kv_namespaces": [
     { "binding": "INSTAGRAM" }
   ],
-  // Mondays 09:17 UTC: refresh the Instagram token (it expires after 60 days unused).
+  // Mondays 09:17 UTC: keep the feed warm and refresh the Instagram token, if one is used
+  // (it expires after 60 days unused).
   "triggers": {
     "crons": ["17 9 * * 1"]
   },
@@ -37,6 +38,9 @@
     "CONTACT_TO": "contact@thesocialclubkids.com",
     "CONTACT_FROM": "The Social Club Website <website@forms.thesocialclubkids.com>",
     "TURNSTILE_SITE_KEY": "",
+    // Instagram feed: the id at the end of the Behold feed URL (https://feeds.behold.so/<id>).
+    // Not a secret. Empty means the page shows the built in club photos. See README.
+    "BEHOLD_FEED_ID": "",
     "ALLOWED_ORIGINS": "https://www.thesocialclubkids.com,https://thesocialclubkids.com"
   }
 }
