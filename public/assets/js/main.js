@@ -1,5 +1,5 @@
 /* The Social Club
-   Interactions (menu, accordion, carousel, contact form, Instagram feed) work everywhere.
+   Interactions (menu, accordion, carousel, contact form) work everywhere.
    Motion (Lenis smooth scroll, GSAP ScrollTrigger) only runs when the visitor
    has not asked for reduced motion. */
 (() => {
@@ -182,6 +182,27 @@
     focusTarget(target);
   });
 
+  /* Hero photo cards: hovering (mouse) or tapping (touch, pen) a card opens it, and
+     the first card reopens when the mouse leaves the row, like the original site.
+     On phones the row is a swipeable strip instead, so it becomes focusable. */
+  const persons = $('[data-persons]');
+  if (persons) {
+    const cards = $$('[data-person]', persons);
+    const wide = window.matchMedia('(min-width: 700px)');
+    const open = (card) => cards.forEach((c) => c.classList.toggle('is-active', c === card));
+    cards.forEach((card) => {
+      card.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && wide.matches) open(card); });
+      card.addEventListener('click', () => { if (wide.matches) open(card); });
+    });
+    persons.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') open(cards[0]); });
+    const syncScrollable = () => {
+      if (wide.matches) persons.removeAttribute('tabindex');
+      else persons.setAttribute('tabindex', '0');
+    };
+    wide.addEventListener('change', () => { syncScrollable(); open(cards[0]); });
+    syncScrollable();
+  }
+
   /* FAQ accordion */
   let refreshTimer;
   $$('[data-acc]').forEach((acc) => {
@@ -231,7 +252,73 @@
     update();
   }
 
-  /* Contact form */
+  /* Instagram feed
+     The section ships with club photos (not links; the Follow button links to the
+     profile). When the Worker has an Instagram token (see README), /api/instagram
+     returns the latest posts, each linking to its own post, and they replace those
+     photos. Images come through /api/instagram/media/, so
+     visitors' browsers never contact Instagram and the CSP stays 'self' only. */
+  const igList = $('[data-instagram-list]');
+  if (igList) {
+    const igIcon = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.2" cy="6.8" r="1.2" fill="currentColor"/></svg>';
+    const validPost = (post) => post
+      && typeof post.href === 'string' && /^https:\/\/(www\.)?instagram\.com\//.test(post.href)
+      && typeof post.img === 'string' && /^\/api\/instagram\/media\/\d+$/.test(post.img);
+    const render = (posts) => {
+      const frag = document.createDocumentFragment();
+      posts.forEach((post) => {
+        const li = document.createElement('li');
+        li.className = 'shot shot--post';
+        const a = document.createElement('a');
+        a.className = 'shot__link';
+        a.href = post.href;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        const img = document.createElement('img');
+        img.src = post.img;
+        img.alt = typeof post.alt === 'string' && post.alt ? post.alt : 'Instagram post from The Social Club';
+        img.width = 1080;
+        img.height = 1350;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        const icon = document.createElement('span');
+        icon.className = 'shot__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = igIcon;
+        const sr = document.createElement('span');
+        sr.className = 'sr-only';
+        sr.textContent = ' (opens Instagram in a new tab)';
+        a.append(img, icon, sr);
+        li.append(a);
+        frag.append(li);
+      });
+      igList.replaceChildren(frag);
+      if (motionOn) ScrollTrigger.refresh();
+    };
+    const loadFeed = () => {
+      fetch('/api/instagram', { headers: { Accept: 'application/json' } })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          const posts = data && Array.isArray(data.posts) ? data.posts.filter(validPost) : [];
+          if (posts.length >= 3) render(posts);
+        })
+        .catch(() => {});
+    };
+    if ('IntersectionObserver' in window) {
+      const igio = new IntersectionObserver((entries) => {
+        if (entries.some((en) => en.isIntersecting)) { loadFeed(); igio.disconnect(); }
+      }, { rootMargin: '900px 0px' });
+      igio.observe(igList);
+    } else {
+      loadFeed();
+    }
+  }
+
+  /* Contact form
+     Sent to FormSubmit (formsubmit.co), which emails it to the address in the form's
+     action. With JavaScript the form posts JSON to FormSubmit's /ajax/ endpoint and
+     shows the thank you message in place; without it, the browser posts the form to
+     FormSubmit, which redirects to the _next page. */
   const form = $('[data-contact-form]');
   if (form) {
     const status = $('[data-form-status]', form);
@@ -239,21 +326,15 @@
     const success = $('[data-form-success]');
     const submit = $('[data-submit]', form);
     const submitLabel = $('[data-submit-label]', form);
-    const turnstileSlot = $('[data-turnstile]', form);
-    const timeField = $('[data-form-time]', form);
-    timeField.value = String(Date.now());
+    const endpoint = form.action.replace('https://formsubmit.co/', 'https://formsubmit.co/ajax/');
 
-    const labels = { name: 'Your name', email: 'Email', phone: 'Phone', age: "Child's age", message: 'Message' };
+    const labels = { name: 'Name', email: 'Email', phone: 'Phone' };
     const rules = {
       name: (v) => (!v ? 'Please enter your name.' : v.length > 100 ? 'Please keep your name under 100 characters.' : ''),
       email: (v) => (!v ? 'Please enter your email address.'
         : (v.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) ? 'Please enter a valid email address, like name@example.com.' : ''),
       phone: (v) => (v && (!/^[0-9+().\s\-xX]{7,40}$/.test(v) || (v.match(/\d/g) || []).length < 7)
         ? 'Please enter a valid phone number, or leave this field blank.' : ''),
-      age: (v) => (v.length > 20 ? 'Please keep this under 20 characters.' : ''),
-      message: (v) => (!v ? 'Please tell us a little about how we can help.'
-        : v.length < 10 ? 'Please add a few more details, at least 10 characters.'
-          : v.length > 5000 ? 'Please keep your message under 5000 characters.' : ''),
     };
 
     const fieldEl = (name) => form.elements.namedItem(name);
@@ -319,7 +400,7 @@
     const setBusy = (busy) => {
       submit.disabled = busy;
       submit.setAttribute('aria-busy', String(busy));
-      submitLabel.textContent = busy ? 'Sending' : 'Send message';
+      submitLabel.textContent = busy ? 'Sending' : 'Submit';
     };
 
     form.addEventListener('submit', async (e) => {
@@ -331,16 +412,19 @@
       if (Object.keys(errors).length) { showErrors(errors); return; }
 
       const data = Object.fromEntries(new FormData(form).entries());
+      ['name', 'email', 'phone'].forEach((k) => { data[k] = (data[k] || '').trim(); });
+      delete data._next; // only used by the no JavaScript fallback
       setBusy(true);
-      status.textContent = 'Sending your message.';
+      status.textContent = 'Sending.';
       try {
-        const res = await fetch(form.action, {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
           body: JSON.stringify(data),
         });
         const body = await res.json().catch(() => ({}));
-        if (res.ok && body.ok) {
+        // FormSubmit answers { success: "true" | "false", message }
+        if (res.ok && String(body.success) === 'true') {
           status.textContent = '';
           form.hidden = true;
           success.hidden = false;
@@ -348,52 +432,14 @@
           if (motionOn) gsap.from(success, { opacity: 0, y: 30, duration: 1, ease: 'expo.out' });
           return;
         }
-        if (res.status === 422 && body.fields) { status.textContent = ''; showErrors(body.fields); return; }
-        throw new Error(body.error || `Request failed with status ${res.status}`);
+        throw new Error(body.message || `Request failed with status ${res.status}`);
       } catch (err) {
         status.classList.add('is-error');
-        status.textContent = 'Sorry, your message could not be sent right now. Please email contact@thesocialclubkids.com or call (626) 765 1724.';
+        status.textContent = 'Oops! Something went wrong while submitting the form. Please email Contact@TheSocialClubKids.com or call (626) 765-1724.';
       } finally {
         setBusy(false);
-        if (window.turnstile && turnstileSlot.dataset.widgetId) window.turnstile.reset(turnstileSlot.dataset.widgetId);
       }
     });
-
-    // Optional Cloudflare Turnstile, enabled when the Worker exposes a site key
-    let turnstileRequested = false;
-    const loadTurnstile = () => {
-      if (turnstileRequested) return;
-      turnstileRequested = true;
-      fetch('/api/config', { headers: { Accept: 'application/json' } })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((cfg) => {
-          if (!cfg || !cfg.turnstileSiteKey) return;
-          window.onTscTurnstileLoad = () => {
-            const id = window.turnstile.render(turnstileSlot, {
-              sitekey: cfg.turnstileSiteKey,
-              appearance: 'interaction-only',
-              theme: 'light',
-              'response-field-name': 'turnstileToken',
-            });
-            turnstileSlot.dataset.widgetId = id;
-          };
-          const s = document.createElement('script');
-          s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTscTurnstileLoad';
-          s.async = true;
-          s.defer = true;
-          document.head.appendChild(s);
-        })
-        .catch(() => {});
-    };
-    if ('IntersectionObserver' in window) {
-      const fio = new IntersectionObserver((entries) => {
-        if (entries.some((en) => en.isIntersecting)) { loadTurnstile(); fio.disconnect(); }
-      }, { rootMargin: '600px 0px' });
-      fio.observe(form);
-    } else {
-      loadTurnstile();
-    }
-    form.addEventListener('focusin', loadTurnstile, { once: true });
   }
 
   /* Text splitting for word reveals. Screen readers get the original text once;
@@ -457,7 +503,7 @@
       gsap.ticker.lagSmoothing(0);
     }
 
-    const api = { ctx, hTween: null, distanceOf: () => 0, ready: false };
+    const api = { hTween: null, distanceOf: () => 0, ready: false };
     const gutterPx = () => parseFloat(getComputedStyle($('.container')).paddingLeft) || 16;
     const radiusPx = () => Math.min(40, Math.max(20, window.innerWidth * 0.026));
 
@@ -471,13 +517,10 @@
       .fromTo(heroWords, { y: 0, yPercent: 105 }, { yPercent: 0, duration: 1.5, stagger: 0.12 }, 0.1)
       .fromTo(heroFade, { y: 24 }, { y: 0, duration: 1.4, stagger: 0.15 }, 0.45);
     if (card) {
-      // Transform only (scale), so the intro runs on the compositor without repainting the photo.
+      // Transform only (scale), so the intro runs on the compositor without repainting the photos.
+      // Pictures are animated rather than images, because the images carry the hover zoom.
       intro.fromTo(card, { scale: 0.9 }, { scale: 1, duration: 1.8 }, 0.1)
-        .fromTo($('img', card), { scale: 1.3 }, { scale: 1, duration: 2.2 }, 0.1);
-      gsap.fromTo($('picture', card), { yPercent: -4, scale: 1.1 }, {
-        yPercent: 6, scale: 1.1, ease: 'none',
-        scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
-      });
+        .fromTo($$('picture', card), { scale: 1.3 }, { scale: 1, duration: 2.2, stagger: 0.08, clearProps: 'transform' }, 0.1);
     }
     if (frame) {
       intro.fromTo(frame, { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 1.6 }, 0.35)
@@ -597,7 +640,7 @@
         });
       },
 
-      /* Counters, word band, gallery strip, footer logo */
+      /* Counters, Instagram strip, footer logo */
       () => {
         $$('[data-count]').forEach((el) => {
           const end = Number(el.dataset.count);
@@ -607,14 +650,6 @@
             v: end, duration: 2, ease: 'expo.out',
             scrollTrigger: { trigger: el, start: 'top 90%', once: true },
             onUpdate: () => { el.textContent = String(Math.round(state.v)); },
-          });
-        });
-
-        $$('[data-marquee]').forEach((row) => {
-          const dir = Number(row.dataset.marquee) || -1;
-          gsap.fromTo(row, { xPercent: dir < 0 ? 0 : -25 }, {
-            xPercent: dir < 0 ? -25 : 0, ease: 'none',
-            scrollTrigger: { trigger: row.parentElement, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
           });
         });
 
@@ -720,122 +755,5 @@
     const settle = () => { if (motionApi && motionApi.ready) ScrollTrigger.refresh(); };
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
     if (document.readyState !== 'complete') window.addEventListener('load', settle, { once: true });
-  }
-
-  /* Instagram feed
-     The section ships hidden and appears only when the Worker returns posts, so the page
-     looks exactly as before whenever the feed is not set up or Instagram cannot be reached.
-     Images come from this site (/api/instagram/media), never straight from Instagram. */
-  const insta = $('[data-insta]');
-  const instaGrid = insta && $('[data-insta-grid]', insta);
-  if (instaGrid && window.fetch) {
-    const svg = (inner) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${inner}</svg>`;
-    const ARROW = svg('<path d="M8 16 16 8M9.5 8H16v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>');
-    const BADGES = {
-      video: svg('<path d="M8.5 5.5v13L19 12z" fill="currentColor"/>'),
-      album: svg('<rect x="8.5" y="8.5" width="11" height="11" rx="2.5" fill="currentColor"/><path d="M5 15.5v-8A2.5 2.5 0 0 1 7.5 5h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'),
-    };
-    const usable = (p) => p && typeof p.alt === 'string'
-      && typeof p.href === 'string' && p.href.startsWith('https://www.instagram.com/')
-      && typeof p.src === 'string' && /^\/api\/instagram\/media\/\d+$/.test(p.src);
-
-    const relayout = () => {
-      if (lenis) lenis.resize();
-      if (motionApi && motionApi.ready) ScrollTrigger.refresh();
-    };
-
-    const tile = (post, i) => {
-      const li = document.createElement('li');
-      li.className = 'insta__item';
-      li.style.setProperty('--i', String(i));
-
-      const a = document.createElement('a');
-      a.className = 'insta__link';
-      a.href = post.href;
-      a.target = '_blank';
-      a.rel = 'noopener';
-
-      const img = document.createElement('img');
-      img.className = 'insta__img';
-      img.alt = post.alt;
-      img.width = 800;
-      img.height = 1000;
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      // A post whose image cannot load is dropped; with none left the section hides again.
-      img.addEventListener('error', () => {
-        li.remove();
-        if (!instaGrid.children.length) insta.hidden = true;
-        relayout();
-      }, { once: true });
-      img.src = post.src;
-      a.appendChild(img);
-
-      if (BADGES[post.type]) {
-        const badge = document.createElement('span');
-        badge.className = 'insta__badge';
-        badge.insertAdjacentHTML('beforeend', BADGES[post.type]);
-        a.appendChild(badge);
-      }
-      const cta = document.createElement('span');
-      cta.className = 'insta__cta';
-      cta.textContent = 'View post';
-      cta.insertAdjacentHTML('beforeend', ARROW);
-      const sr = document.createElement('span');
-      sr.className = 'sr-only';
-      sr.textContent = ' (opens in a new tab)';
-      a.append(cta, sr);
-
-      li.appendChild(a);
-      return li;
-    };
-
-    const show = (posts) => {
-      // Full rows only: eight tiles (six on phones, see the CSS), or four, or whatever exists.
-      const count = posts.length >= 8 ? 8 : posts.length >= 4 ? 4 : posts.length;
-      if (!count) return;
-      instaGrid.replaceChildren(...posts.slice(0, count).map(tile));
-
-      // Revealing the section moves everything after it. If the visitor is already looking
-      // at what comes after (for example a link straight to #contact), keep their view still.
-      const next = insta.nextElementSibling;
-      const before = next ? next.getBoundingClientRect().top : Infinity;
-      root.style.overflowAnchor = 'none';
-      insta.hidden = false;
-      if (lenis) lenis.resize();
-      if (before < window.innerHeight / 2) {
-        const shift = next.getBoundingClientRect().top - before;
-        if (shift > 1) scrollToTarget(window.scrollY + shift, true);
-      }
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => { root.style.overflowAnchor = ''; }));
-
-      if (motionOn && motionApi) {
-        const title = $('[data-insta-title]', insta);
-        if (title) {
-          motionApi.ctx.add(() => {
-            gsap.fromTo(splitWords(title, true), { yPercent: 110 }, {
-              yPercent: 0, duration: 1.2, stagger: 0.06, ease: 'expo.out',
-              scrollTrigger: { trigger: title, start: 'top 88%', once: true },
-            });
-          });
-        }
-        if (motionApi.ready) ScrollTrigger.refresh();
-      }
-
-      // Fade the tiles up when the section scrolls into view (CSS does the animation).
-      if ('IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-          if (entries.some((en) => en.isIntersecting)) { insta.classList.add('is-inview'); io.disconnect(); }
-        }, { rootMargin: '0px 0px -10% 0px' });
-        io.observe(insta);
-      } else {
-        insta.classList.add('is-inview');
-      }
-    };
-
-    fetch('/api/instagram', { headers: { Accept: 'application/json' } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data && Array.isArray(data.posts)) show(data.posts.filter(usable)); })
-      .catch(() => {});
   }
 })();
