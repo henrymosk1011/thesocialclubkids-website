@@ -41,6 +41,13 @@
     // Instagram feed: the id at the end of the Behold feed URL (https://feeds.behold.so/<id>).
     // Not a secret. Empty means the page shows the built in club photos. See README.
     "BEHOLD_FEED_ID": "",
+    // How often the Worker asks Behold for new posts, in minutes. Every request counts
+    // against the Behold plan's monthly allowance, so this must match the plan:
+    //   Free    (1,200 a month, new posts daily)       240
+    //   Starter (15,000 a month, new posts hourly)      15   <- current plan
+    //   Pro     (125,000 a month, new posts every 5 min)  5
+    // If the plan is ever downgraded to Free, set this back to 240 first.
+    "BEHOLD_REFRESH_MINUTES": "15",
     "ALLOWED_ORIGINS": "https://www.thesocialclubkids.com,https://thesocialclubkids.com"
   }
 }

@@ -25,6 +25,7 @@
  *   ALLOWED_ORIGINS       var, optional comma separated list of extra allowed origins
  *   BEHOLD_FEED_ID        var, optional, id (or URL) of a Behold JSON feed: the simple way to
  *                         turn on the Instagram feed
+ *   BEHOLD_REFRESH_MINUTES  var, optional, how often to ask Behold; depends on the Behold plan
  *   INSTAGRAM_TOKEN       secret, optional, Instagram API (Instagram Login) long lived token,
  *                         used only when BEHOLD_FEED_ID is empty
  *   INSTAGRAM             KV binding, stores the cached feed and the refreshed token
@@ -361,13 +362,16 @@ const IG_LIMIT = 12;
 const BEHOLD_API = 'https://feeds.behold.so';
 const IG_TOKEN_KEY = 'ig:token';
 const IG_FEED_KEY = 'ig:feed:v2';
-// After a refresh starts or fails, page views wait this long before asking the source again.
+// After a refresh starts or fails, page views wait this long before asking the source again
+// (or for the refresh interval, when that is shorter).
 const IG_RETRY_MS = 30 * 60 * 1000;
 // How long a copy counts as fresh, and how long it is kept when the source cannot be reached.
-// Behold: its free plan picks up new posts once a day and counts every request for the feed
-// as a "view" (1,200 a month, then the account pauses until the next month), so ask every
-// four hours: under 200 requests a month however busy the site is. Its images are its own
-// copies rather than Instagram's expiring links, so the last good copy is kept for a week.
+// Behold counts every request for the feed as a "view" against the plan's monthly allowance,
+// so the interval follows the plan: BEHOLD_REFRESH_MINUTES in wrangler.jsonc. Without it the
+// free plan's safe value applies: every four hours, under 200 requests a month however busy
+// the site is (the free plan allows 1,200, then pauses the account until the next month).
+// Behold's images are its own copies rather than Instagram's expiring links, so the last
+// good copy is kept for a week.
 // Instagram: image links expire, so the copy is refreshed hourly and kept for a day.
 const IG_SOURCES = {
   behold: { freshMs: 4 * 60 * 60 * 1000, keepSeconds: 7 * 24 * 60 * 60 },
@@ -474,6 +478,17 @@ function feedSource(env) {
   return env.INSTAGRAM_TOKEN ? 'instagram' : '';
 }
 
+// Refresh and retry intervals for a source. Behold's follows BEHOLD_REFRESH_MINUTES
+// (5 minutes to a day); anything missing or unreadable falls back to the free plan's value.
+function feedTiming(env, source) {
+  let { freshMs } = IG_SOURCES[source];
+  if (source === 'behold') {
+    const minutes = Number(env.BEHOLD_REFRESH_MINUTES);
+    if (Number.isFinite(minutes) && minutes > 0) freshMs = Math.min(1440, Math.max(5, minutes)) * 60 * 1000;
+  }
+  return { freshMs, retryMs: Math.min(IG_RETRY_MS, freshMs) };
+}
+
 // The stored copy for this source, or null. Past its keep time the posts are dropped,
 // but the record still says when the source was last tried.
 async function storedFeed(env, source) {
@@ -500,10 +515,11 @@ async function loadFeed(env, { ctx = null, force = false, refresh = true } = {})
 
   if (!force) {
     const now = Date.now();
+    const { freshMs, retryMs } = feedTiming(env, source);
     const lastTry = Math.max(cached ? cached.triedAt || 0 : 0, igLastRefreshStart[source] || 0);
-    const triedLately = now - lastTry < IG_RETRY_MS;
+    const triedLately = now - lastTry < retryMs;
     if (cached) {
-      const fresh = now - cached.fetchedAt < IG_SOURCES[source].freshMs;
+      const fresh = now - cached.fetchedAt < freshMs;
       if (!refresh || fresh || triedLately) return cached;
       if (cached.posts.length && ctx && ctx.waitUntil) {
         // Serve the stale copy now and refresh it in the background.
@@ -531,7 +547,7 @@ async function refreshFeed(env, source, cached) {
   const base = cached || { source, fetchedAt: 0, posts: [] };
   if (kv) {
     // Note the attempt first, so page views that arrive meanwhile, or after a failure,
-    // wait for IG_RETRY_MS instead of each asking the source again.
+    // wait for the retry interval instead of each asking the source again.
     const until = Math.max(Math.floor(Date.now() / 1000) + 3600, Math.floor(base.fetchedAt / 1000) + keepSeconds);
     await kv.put(IG_FEED_KEY, JSON.stringify({ ...base, triedAt: Date.now() }), { expiration: until }).catch(() => {});
   }

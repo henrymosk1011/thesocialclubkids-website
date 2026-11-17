@@ -92,8 +92,10 @@ One time setup:
 
 Good to know:
 
-* Behold's free plan gives 6 posts, picks up new posts once a day, and allows 1,200 feed requests a month (the account pauses until the next month if that is exceeded). The Worker asks at most every four hours, about 180 requests a month no matter how busy the site is, and image requests are not counted.
-* A new post can take up to a day to appear. If Behold is unreachable the last good copy is shown for up to a week, then the strip goes back to the built in photos until the feed returns. A post whose image fails to load is dropped from the strip.
+* The client is on Behold's **Starter** plan: up to 50 posts per feed, new posts picked up every hour, 15,000 feed requests a month. The Worker asks every 15 minutes (`BEHOLD_REFRESH_MINUTES` in `wrangler.jsonc`), at most about 2,900 requests a month no matter how busy the site is, and image requests are not counted. A new post shows on the site within about an hour and a half.
+* `BEHOLD_REFRESH_MINUTES` must match the plan, because every request counts against its allowance: Free 240 (1,200 requests a month, and the account pauses until the next month if that is exceeded), Starter 15, Pro 5. **Before downgrading to Free, set it back to 240.** Left out, it defaults to 240.
+* The strip shows at most 12 posts. Set *Number of posts* to 12 in the Behold feed settings; to show more, raise `IG_LIMIT` in `src/worker.js` as well.
+* If Behold is unreachable the last good copy is shown for up to a week, then the strip goes back to the built in photos until the feed returns. A post whose image fails to load is dropped from the strip.
 * If the Instagram password changes or access is revoked, reconnect the source in Behold. Nothing changes on the site.
 * To turn the feed off, empty `BEHOLD_FEED_ID` and deploy.
 
