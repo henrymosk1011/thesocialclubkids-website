@@ -629,17 +629,23 @@ async function fetchInstagramPosts(env) {
     .filter(Boolean);
 }
 
-// A short, readable description from the caption: first sentence, no hashtags or mentions.
+// A short, readable description from the caption: its opening sentence, without hashtags,
+// mentions, links or emoji. Captions often end a thought with a line break or an emoji
+// rather than a full stop, so those count as breaks too.
+const CAPTION_BREAK = /(?:\s*(?:\n|(?![©®™])\p{Extended_Pictographic}|[\u{FE0F}\u{200D}\u{1F3FB}-\u{1F3FF}\u{1F1E6}-\u{1F1FF}])\s*)+/u;
 function altFromCaption(caption, type) {
   const fallback = type === 'VIDEO' ? 'Video from The Social Club on Instagram' : 'Photo from The Social Club on Instagram';
   if (typeof caption !== 'string') return fallback;
-  let text = caption
+  const parts = caption
     .replace(/[#@][\p{L}\p{N}_.]+/gu, ' ')
     .replace(/https?:\/\/\S+/g, ' ')
-    .replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!text) return fallback;
+    .split(CAPTION_BREAK)
+    .map((part) => part.replace(/\s+/g, ' ').trim())
+    .filter((part) => /[\p{L}\p{N}]/u.test(part));
+  if (!parts.length) return fallback;
+  // A very short opening ("Hi friends") is joined with what follows.
+  let text = parts[0];
+  for (let i = 1; text.length < 20 && i < parts.length; i++) text = `${text} ${parts[i]}`;
   const sentence = text.match(/^.{20,}?[.!?](\s|$)/);
   if (sentence) text = sentence[0].trim();
   if (text.length > 140) text = `${text.slice(0, 137).replace(/\s+\S*$/, '')}...`;
