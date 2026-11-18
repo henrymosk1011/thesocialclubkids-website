@@ -40,7 +40,7 @@
     "TURNSTILE_SITE_KEY": "",
     // Instagram feed: the id at the end of the Behold feed URL (https://feeds.behold.so/<id>).
     // Not a secret. Empty means the page shows the built in club photos. See README.
-    "BEHOLD_FEED_ID": "",
+    "BEHOLD_FEED_ID": "x6YXuViaacEK1bFsQgO0",
     // How often the Worker asks Behold for new posts, in minutes. Every request counts
     // against the Behold plan's monthly allowance, so this must match the plan:
     //   Free    (1,200 a month, new posts daily)       240
