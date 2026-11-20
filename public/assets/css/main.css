@@ -926,6 +926,21 @@ h1, h2, h3 {
 .select { position: relative; }
 .select select { padding-right: 3rem; cursor: pointer; }
 .select__icon { position: absolute; right: 1rem; top: 50%; translate: 0 -50%; pointer-events: none; }
+/* PHI notice, the same wording and treatment as the form on The HummingBird Nest's site */
+.form__phi {
+  display: flex;
+  align-items: flex-start;
+  gap: .625rem;
+  margin: .25rem 0 1.5rem;
+  padding: .875rem 1rem;
+  border-radius: .9rem;
+  background: #e8f2c6;
+  color: var(--ink);
+  font-size: .9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.form__phi .icon { width: 1.25rem; height: 1.25rem; flex: none; margin-top: 1px; color: var(--leaf); }
 .hp { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: .5rem; }
 .form__privacy { margin: 0; font-size: .9375rem; color: var(--muted); }
