@@ -217,8 +217,9 @@ function validate(d) {
   if (!d.name) f.name = 'Please enter your name.';
   if (!d.email) f.email = 'Please enter your email address.';
   else if (!EMAIL_RE.test(d.email)) f.email = 'Please enter a valid email address, like name@example.com.';
-  if (d.phone && (!PHONE_RE.test(d.phone) || (d.phone.match(/\d/g) || []).length < 7)) {
-    f.phone = 'Please enter a valid phone number, or leave this field blank.';
+  if (!d.phone) f.phone = 'Please enter your phone number.';
+  else if (!PHONE_RE.test(d.phone) || (d.phone.match(/\d/g) || []).length < 7) {
+    f.phone = 'Please enter a valid phone number, like (626) 555-0100.';
   }
   if (!PROGRAMS.has(d.program)) d.program = 'Not sure yet';
   return f;
