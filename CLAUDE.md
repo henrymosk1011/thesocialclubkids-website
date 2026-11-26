@@ -17,6 +17,12 @@ Moving the domain (DNS or nameserver changes), deleting resources, or changing a
 level settings in Cloudflare, GitHub, Resend or Instagram still needs the owner's
 confirmation first.
 
+## How to report back
+
+The owner asked (November 26, 2026) for short, simple replies. End every task with a
+clean numbered list: what was done, and what they need to do (if anything), one short
+line each. Leave out long explanations, test details and background unless they ask.
+
 ## Project notes
 
 See `README.md` for the stack, the contact form, the Instagram feed setup, and the
