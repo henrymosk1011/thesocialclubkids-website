@@ -55,11 +55,29 @@ Automatic builds need the **Cloudflare Workers and Pages** GitHub App installed 
 
 ### Domain: GoDaddy to Cloudflare
 
-1. In Cloudflare, the zone `thesocialclubkids.com` is added. Open **DNS > Records** and confirm the existing records were imported, especially the **MX and TXT records for email** (`contact@thesocialclubkids.com`). Mail records must stay **DNS only** (grey cloud).
-2. In GoDaddy: **My Products > thesocialclubkids.com > DNS > Nameservers > Change > I'll use my own nameservers**, then enter the two Cloudflare nameservers shown on the zone overview. If DNSSEC is on at GoDaddy, turn it off first and re enable it in Cloudflare after the zone is active.
-3. When the zone shows **Active**, open **Workers & Pages > thesocialclubkids > Settings > Domains & Routes** and add custom domains `www.thesocialclubkids.com` and `thesocialclubkids.com`. Cloudflare issues certificates automatically.
-4. Make `www` canonical: **Rules > Redirect Rules > Create rule from template > Redirect from root to WWW** (301, keep query string).
-5. **SSL/TLS > Edge Certificates**: turn on Always Use HTTPS. Leave Rocket Loader off (it conflicts with the Content Security Policy).
+The domain is registered at GoDaddy. Before the move its DNS was hosted at GoDaddy (`ns39`/`ns40.domaincontrol.com`), the website was the old Webflow site, and email runs on Google Workspace. DNSSEC is off.
+
+**Done in Cloudflare (zone `thesocialclubkids.com`, created 2026-11-26):**
+
+* DNS records copied exactly from GoDaddy, all **DNS only**:
+  * MX: `aspmx.l.google.com` (1), `alt1`/`alt2.aspmx.l.google.com` (5), `alt3`/`alt4.aspmx.l.google.com` (10)
+  * TXT `@`: `v=spf1 include:dc-aa8e722993._spfm.thesocialclubkids.com ~all`
+  * TXT `dc-aa8e722993._spfm`: `v=spf1 include:_spf.google.com ~all` (the root SPF record depends on it)
+  * TXT `@`: `google-site-verification=...` (keeps Search Console verified)
+  * Temporary, so the old site keeps working while nameservers propagate: A `@` 198.202.211.1 and CNAME `www` cdn.webflow.com (Webflow)
+  * Not copied: `_domainconnect` (a GoDaddy only feature)
+* Settings: SSL Full (strict), Always Use HTTPS, minimum TLS 1.2, TLS 1.3, Automatic HTTPS Rewrites, Rocket Loader **off** (it conflicts with the Content Security Policy), Email Obfuscation **off** (it rewrites `mailto:` links into a JavaScript decoded placeholder, which screen readers and no JavaScript visitors read as "[email protected]").
+* Redirect rule: `thesocialclubkids.com/*` to `https://www.thesocialclubkids.com/*`, 301, query string kept. It takes effect once the apex is proxied (step 3).
+
+**Steps to finish:**
+
+1. **GoDaddy** (needs the GoDaddy login): **My Products > thesocialclubkids.com > DNS > Nameservers > Change nameservers > I'll use my own nameservers**, replace both with `kira.ns.cloudflare.com` and `viddy.ns.cloudflare.com`, and save. Nothing breaks during propagation because Cloudflare answers with the same records GoDaddy had.
+2. Wait for the zone to show **Active** in Cloudflare (usually under an hour; **Overview > Check nameservers now** speeds it up) and for **SSL/TLS > Edge Certificates** to show the Universal certificate as **Active**.
+3. Switch the site to the Worker: in **DNS > Records** delete the temporary A `@` and CNAME `www` Webflow records, then in **Workers & Pages > thesocialclubkids > Settings > Domains & Routes > Add > Custom Domain** add `www.thesocialclubkids.com` and `thesocialclubkids.com`. Cloudflare creates the DNS records and certificates itself.
+4. Check: `https://www.thesocialclubkids.com/` serves this site, `https://thesocialclubkids.com/anything?x=1` answers 301 to `https://www.thesocialclubkids.com/anything?x=1`, and a test email to `contact@thesocialclubkids.com` arrives.
+5. Afterwards: submit the sitemap in Search Console, send one test through the contact form (FormSubmit may ask to activate again for the new domain, see below), and cancel the Webflow site plan once the new site has been live for a few days.
+
+Email hardening (optional, not done): Google Workspace DKIM is not set up (no `google._domainkey` record) and there is no DMARC record. Generate the DKIM key in **Google Admin > Apps > Google Workspace > Gmail > Authenticate email**, add it in Cloudflare as a TXT record, then add `_dmarc` TXT `v=DMARC1; p=none; rua=mailto:contact@thesocialclubkids.com` and tighten the policy later.
 
 ### Contact form (FormSubmit)
 
