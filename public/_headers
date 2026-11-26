@@ -21,3 +21,7 @@
 
 /thanks/*
   X-Robots-Tag: noindex
+
+# The workers.dev copy of the site stays out of search results; only www.thesocialclubkids.com is indexed.
+https://thesocialclubkids.henrymm.workers.dev/*
+  X-Robots-Tag: noindex

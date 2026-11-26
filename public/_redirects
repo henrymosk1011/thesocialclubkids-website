@@ -1,6 +1,10 @@
 /index.html / 301
+/privacy /privacy/ 301
+/privacy/index.html /privacy/ 301
 /privacy-policy /privacy/ 301
 /privacy-policy/ /privacy/ 301
+/accessibility /accessibility/ 301
+/accessibility/index.html /accessibility/ 301
 /accessibility-statement /accessibility/ 301
 /contact /#contact 301
 /about /#about 301
