@@ -347,9 +347,12 @@
       name: (v) => (!v ? 'Please enter your name.' : v.length > 100 ? 'Please keep your name under 100 characters.' : ''),
       email: (v) => (!v ? 'Please enter your email address.'
         : (v.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) ? 'Please enter a valid email address, like name@example.com.' : ''),
-      phone: (v) => (v && (!/^[0-9+().\s\-xX]{7,40}$/.test(v) || (v.match(/\d/g) || []).length < 7)
-        ? 'Please enter a valid phone number, or leave this field blank.' : ''),
+      phone: (v) => (!v ? 'Please enter your phone number.'
+        : (!/^[0-9+().\s\-xX]{7,40}$/.test(v) || (v.match(/\d/g) || []).length < 7) ? 'Please enter a valid phone number, like (626) 555-0100.' : ''),
     };
+
+    // Without JavaScript the browser checks the required fields; with it, the messages above do.
+    form.noValidate = true;
 
     const fieldEl = (name) => form.elements.namedItem(name);
     const clearErrors = () => {
@@ -546,9 +549,13 @@
           ease: 'none',
           scrollTrigger: { trigger: frame, start: 'top 85%', end: 'top 10%', scrub: true, invalidateOnRefresh: true },
         });
-      gsap.fromTo($('img', frame), { yPercent: -6, scale: 1.14 }, {
-        yPercent: 6, scale: 1.14, ease: 'none',
-        scrollTrigger: { trigger: frame, start: 'top bottom', end: 'bottom top', scrub: true },
+      // Phones get a gentler drift and zoom so the whole group stays in the shorter frame.
+      const phone = window.matchMedia('(max-width: 699px)');
+      const drift = () => (phone.matches ? 3.5 : 6);
+      const zoom = () => 1 + (drift() + 1) / 50;
+      gsap.fromTo($('img', frame), { yPercent: () => -drift(), scale: zoom }, {
+        yPercent: () => drift(), scale: zoom, ease: 'none',
+        scrollTrigger: { trigger: frame, start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true },
       });
     }
     gsap.to('.hero__inner', {

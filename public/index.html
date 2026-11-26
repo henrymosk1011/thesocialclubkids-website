@@ -36,13 +36,13 @@
 
   <link rel="preload" href="/assets/fonts/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" type="image/avif" imagesrcset="/assets/img/tunnel_440.avif 440w, /assets/img/tunnel_800.avif 800w, /assets/img/tunnel_1500.avif 1500w" imagesizes="(min-width: 1000px) 1100px, (min-width: 700px) 940px, 105vw" fetchpriority="high">
-  <link rel="stylesheet" href="/assets/css/main.css?v=20261120a">
+  <link rel="stylesheet" href="/assets/css/main.css?v=20261126a">
     <!-- Flags JS and motion support before first paint. CSP allows it by hash (see _headers). -->
   <script>(function(){var r=document.documentElement;r.classList.add('js');if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){r.classList.add('motion');setTimeout(function(){if(!window.__tscMotionReady)r.classList.remove('motion')},4000)}})();</script>
   <script defer src="/assets/js/vendor/gsap.min.js?v=3.15.0"></script>
   <script defer src="/assets/js/vendor/ScrollTrigger.min.js?v=3.15.0"></script>
   <script defer src="/assets/js/vendor/lenis.min.js?v=1.3.26"></script>
-  <script defer src="/assets/js/main.js?v=20261113a"></script>
+  <script defer src="/assets/js/main.js?v=20261126a"></script>
 
   <script type="application/ld+json">
   {
@@ -271,19 +271,15 @@
         <ul class="stats" role="list">
           <li class="stat" data-fade>
             <div class="stat__num" aria-hidden="true"><span data-count="20">20</span>+</div>
-            <p class="stat__label"><span class="sr-only">20 plus </span>Years of hands on experience</p>
+            <p class="stat__label"><span class="sr-only">20 plus </span>Years of <span class="nowrap">PEERS®-Based</span> hands on experience</p>
           </li>
           <li class="stat" data-fade>
             <div class="stat__num" aria-hidden="true"><span data-count="50">50</span></div>
-            <p class="stat__label"><span class="sr-only">50 </span>Minute sessions, once a week</p>
+            <p class="stat__label"><span class="sr-only">50 </span>Minute sessions</p>
           </li>
           <li class="stat" data-fade>
-            <div class="stat__num" aria-hidden="true"><span data-count="48">48</span>h</div>
-            <p class="stat__label"><span class="sr-only">Within 48 hours, </span>Progress notes sent after every session</p>
-          </li>
-          <li class="stat" data-fade>
-            <div class="stat__num" aria-hidden="true"><span data-count="4">4</span></div>
-            <p class="stat__label"><span class="sr-only">4 </span>Clubs for every age and stage</p>
+            <div class="stat__num" aria-hidden="true"><span data-count="6">6</span>-<span data-count="8">8</span></div>
+            <p class="stat__label"><span class="sr-only">6 to 8 </span>Kids in each club</p>
           </li>
         </ul>
       </div>
@@ -552,7 +548,7 @@
         </div>
 
         <div class="contact__panel" data-fade>
-          <form class="form" action="https://formsubmit.co/contact@thesocialclubkids.com" method="post" novalidate data-contact-form>
+          <form class="form" action="https://formsubmit.co/contact@thesocialclubkids.com" method="post" data-contact-form>
             <!-- FormSubmit settings. main.js sends the form to FormSubmit's AJAX endpoint;
                  without JavaScript the browser posts it there and FormSubmit redirects to _next. -->
             <input type="hidden" name="_subject" value="New website inquiry: The Social Club">
@@ -575,8 +571,8 @@
                 <p class="field__error" id="f-email-err" data-error-for="email" hidden></p>
               </div>
               <div class="field">
-                <label for="f-phone">Phone <span class="field__opt">(optional)</span></label>
-                <input id="f-phone" name="phone" type="tel" autocomplete="tel" maxlength="40" aria-describedby="f-phone-err">
+                <label for="f-phone">Phone</label>
+                <input id="f-phone" name="phone" type="tel" autocomplete="tel" required maxlength="40" aria-describedby="f-phone-err">
                 <p class="field__error" id="f-phone-err" data-error-for="phone" hidden></p>
               </div>
             </div>
